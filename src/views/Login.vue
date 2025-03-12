@@ -23,44 +23,60 @@
         
         <div v-else-if="authCode" class="w-full flex flex-col items-center justify-center">
           <div class="w-full flex flex-col items-center justify-center mb-6">
-            <!-- 二维码部分 -->
-            <div class="w-full text-center mb-4">
-              <h3 class="text-lg mb-4">扫码登录</h3>
-              <div class="inline-block p-4 border border-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <img :src="authCode.qrcode_url" alt="登录二维码" class="w-[12.5rem] h-[12.5rem]" />
-              </div>
-              <div class="w-full p-4 bg-gray-50 dark:bg-gray-700 rounded mx-auto max-w-[18.75rem]">
-                <p class="mb-2 text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">1. 打开百度网盘App</p>
-                <p class="mb-2 text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">2. 点击"我的"，然后点击右上角扫一扫</p>
-                <p class="text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">3. 扫描二维码登录</p>
-              </div>
-            </div>
-            
-            <!-- 分隔线 -->
-            <div class="w-full relative text-center my-6">
-              <div class="absolute top-1/2 left-0 w-full h-px bg-gray-200 dark:bg-gray-600"></div>
-              <span class="relative px-4 bg-white dark:bg-gray-800 text-gray-500">或</span>
-            </div>
-            
-            <!-- 用户码部分 -->
-            <div class="w-full text-center mb-4">
-              <h3 class="text-lg mb-4">用户码登录</h3>
-              <div class="text-center mb-4">
-                <div class="inline-block text-2xl font-bold tracking-wider py-3 px-6 bg-gray-50 dark:bg-gray-700 rounded">
-                  {{ authCode.user_code }}
+            <!-- Tab切换 -->
+            <a-tabs 
+              v-model:activeKey="activeTabKey" 
+              centered 
+              class="w-full login-tabs"
+              :tab-bar-style="{ margin: '0 0 24px 0' }"
+            >
+              <!-- 二维码登录Tab -->
+              <a-tab-pane key="qrcode" tab="扫码登录">
+                <div class="w-full text-center">
+                  <div class="qrcode-container mx-auto">
+                    <div class="p-4 border border-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                      <img :src="authCode.qrcode_url" alt="登录二维码" class="w-[12.5rem] h-[12.5rem]" />
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded">
+                      <p class="mb-2 text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">1. 打开百度网盘App</p>
+                      <p class="mb-2 text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">2. 点击"我的"，然后点击右上角扫一扫</p>
+                      <p class="text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">3. 扫描二维码登录</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </a-tab-pane>
               
-              <div class="text-center mb-4">
-                <p class="mb-2 text-gray-500 dark:text-gray-400">请访问以下网址并输入上方用户码：</p>
-                <a :href="authCode.verification_url" target="_blank" class="text-primary hover:underline">
-                  {{ authCode.verification_url }}
-                </a>
-              </div>
-            </div>
+              <!-- 用户码登录Tab -->
+              <a-tab-pane key="usercode" tab="用户码登录">
+                <div class="w-full text-center">
+                  <div class="text-center mb-4">
+                    <div class="user-code-container">
+                      <div class="user-code">
+                        {{ authCode.user_code }}
+                      </div>
+                      <a-button 
+                        type="primary" 
+                        class="copy-button" 
+                        @click="copyUserCode"
+                        :icon="copyIcon"
+                      >
+                        复制
+                      </a-button>
+                    </div>
+                  </div>
+                  
+                  <div class="text-center mb-4">
+                    <p class="mb-2 text-gray-500 dark:text-gray-400">请访问以下网址并输入上方用户码：</p>
+                    <a :href="authCode.verification_url" target="_blank" class="text-primary hover:underline">
+                      {{ authCode.verification_url }}
+                    </a>
+                  </div>
+                </div>
+              </a-tab-pane>
+            </a-tabs>
           </div>
           
-          <div class="mb-6 text-center">
+          <div class="mb-6 text-center" v-if="activeTabKey === 'usercode'">
             <p v-if="authCodeStatus === 'WAITING'" class="text-base flex items-center justify-center">
               <a-badge status="processing" text="等待授权" />
             </p>
@@ -87,13 +103,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, h } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
+import { CopyOutlined } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores';
 
 const router = useRouter();
 const userStore = useUserStore();
+
+// 复制图标
+const copyIcon = h(CopyOutlined);
+
+// Tab切换
+const activeTabKey = ref('qrcode'); // 默认选中二维码登录tab
+
+// 复制用户码到剪贴板
+const copyUserCode = () => {
+  if (authCode.value && authCode.value.user_code) {
+    navigator.clipboard.writeText(authCode.value.user_code)
+      .then(() => {
+        message.success('用户码已复制到剪贴板');
+      })
+      .catch(err => {
+        console.error('复制失败:', err);
+        message.error('复制失败，请手动复制');
+      });
+  }
+};
 
 // 授权码登录状态
 const authCode = ref(null);
@@ -212,3 +249,99 @@ onBeforeUnmount(() => {
   clearInterval();
 });
 </script>
+
+<style scoped>
+/* 标签样式 */
+.login-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 24px;
+}
+
+.login-tabs :deep(.ant-tabs-nav::before) {
+  display: none;
+}
+
+.login-tabs :deep(.ant-tabs-tab) {
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin: 0 4px;
+  transition: all 0.3s;
+  background-color: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.login-tabs :deep(.ant-tabs-tab-active) {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.login-tabs :deep(.ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: #1890ff !important;
+  font-weight: 500;
+}
+
+.login-tabs :deep(.ant-tabs-content-holder) {
+  padding: 16px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+/* 暗黑模式适配 */
+:global(.dark) .login-tabs :deep(.ant-tabs-tab) {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+:global(.dark) .login-tabs :deep(.ant-tabs-tab-active) {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:global(.dark) .login-tabs :deep(.ant-tabs-content-holder) {
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+/* 确保两个tab内容区域布局合理 */
+.login-tabs :deep(.ant-tabs-content) {
+  min-height: 250px;
+}
+
+.login-tabs :deep(.ant-tabs-tabpane) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 用户码和复制按钮样式 */
+.user-code-container {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 300px;
+  width: 100%;
+}
+
+.user-code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 1rem;
+  background-color: #f5f5f5;
+  border-radius: 4px 0 0 4px;
+  height: 40px;
+  flex: 1;
+}
+
+.copy-button {
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+
+:global(.dark) .user-code {
+  background-color: #333;
+}
+</style>
