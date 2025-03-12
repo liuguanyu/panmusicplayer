@@ -48,18 +48,3 @@ onUnmounted(() => {
   playerStore.destroy();
 });
 </script>
-
-<style scoped>
-.animate-spin-slow {
-  animation: spin 20s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

@@ -1,16 +1,16 @@
 <template>
-  <a-layout class="main-layout">
+  <a-layout class="h-screen">
     <!-- 侧边栏 -->
     <a-layout-sider
       v-model:collapsed="collapsed"
       :trigger="null"
       collapsible
-      class="main-sider"
+      class="overflow-auto h-screen fixed left-0 top-0 bottom-0 z-10"
       :theme="theme"
     >
-      <div class="logo">
-        <img src="@/assets/vue.svg" alt="百度云音乐" />
-        <h1 v-if="!collapsed">百度云音乐</h1>
+      <div class="h-16 p-4 flex items-center overflow-hidden">
+        <img src="@/assets/vue.svg" alt="百度云音乐" class="h-8 w-8 mr-2" />
+        <h1 v-if="!collapsed" class="text-lg m-0 whitespace-nowrap">百度云音乐</h1>
       </div>
       <a-menu
         v-model:selectedKeys="selectedKeys"
@@ -28,19 +28,19 @@
 
     <a-layout>
       <!-- 头部 -->
-      <a-layout-header class="main-header">
-        <div class="header-left">
+      <a-layout-header class="bg-white dark:bg-dark px-4 flex items-center justify-between shadow-sm sticky top-0 z-9">
+        <div class="flex items-center">
           <menu-unfold-outlined
             v-if="collapsed"
-            class="trigger"
+            class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
             @click="() => (collapsed = !collapsed)"
           />
           <menu-fold-outlined
             v-else
-            class="trigger"
+            class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
             @click="() => (collapsed = !collapsed)"
           />
-          <div class="breadcrumb">
+          <div class="ml-2">
             <a-breadcrumb>
               <a-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="index">
                 {{ item.title }}
@@ -48,9 +48,9 @@
             </a-breadcrumb>
           </div>
         </div>
-        <div class="header-right">
+        <div>
           <a-dropdown>
-            <a class="user-dropdown">
+            <a class="flex items-center cursor-pointer hover:text-primary">
               <a-avatar :size="32" class="mr-2">{{ userInfo?.nickname?.charAt(0) || 'U' }}</a-avatar>
               <span>{{ userInfo?.nickname || '未登录' }}</span>
             </a>
@@ -72,9 +72,18 @@
       </a-layout-header>
 
       <!-- 内容区 -->
-      <a-layout-content class="main-content">
+      <a-layout-content 
+        class="p-6 overflow-auto transition-all duration-200 min-h-[calc(100vh-144px)]"
+        :class="collapsed ? 'ml-[80px]' : 'ml-[200px]'"
+      >
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition 
+            enter-active-class="transition-opacity duration-300 ease-in"
+            leave-active-class="transition-opacity duration-300 ease-out"
+            enter-from-class="opacity-0"
+            leave-to-class="opacity-0"
+            mode="out-in"
+          >
             <component :is="Component" />
           </transition>
         </router-view>
@@ -181,96 +190,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-<style lang="less" scoped>
-.main-layout {
-  height: 100vh;
-}
-
-.main-sider {
-  overflow: auto;
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 10;
-
-  .logo {
-    height: 64px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    
-    img {
-      height: 32px;
-      width: 32px;
-      margin-right: 8px;
-    }
-    
-    h1 {
-      color: var(--text-color);
-      font-size: 18px;
-      margin: 0;
-      white-space: nowrap;
-    }
-  }
-}
-
-.main-header {
-  background: var(--background-color);
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 9;
-  
-  .header-left {
-    display: flex;
-    align-items: center;
-    
-    .trigger {
-      font-size: 18px;
-      cursor: pointer;
-      transition: color 0.3s;
-      margin-right: 16px;
-      
-      &:hover {
-        color: var(--primary-color);
-      }
-    }
-    
-    .breadcrumb {
-      margin-left: 8px;
-    }
-  }
-  
-  .header-right {
-    .user-dropdown {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      
-      &:hover {
-        color: var(--primary-color);
-      }
-    }
-  }
-}
-
-.main-content {
-  margin-left: 200px;
-  padding: 24px;
-  min-height: calc(100vh - 64px - 80px); // 减去header和player的高度
-  overflow: auto;
-  transition: margin 0.2s;
-}
-
-.main-layout :deep(.ant-layout-sider-collapsed) + .ant-layout .main-content {
-  margin-left: 80px;
-}
-</style>

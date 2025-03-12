@@ -22,6 +22,11 @@ export default defineConfig({
         // 自定义快捷方式
         { 'flex-center': 'flex items-center justify-center' },
         { 'flex-between': 'flex items-center justify-between' },
+        { 'flex-center-col': 'flex flex-col justify-center items-center' },
+        { 'flex-between-center': 'flex justify-between items-center' },
+        { 'flex-start-center': 'flex justify-start items-center' },
+        { 'flex-end-center': 'flex justify-end items-center' },
+        { 'flex-center-y': 'flex items-center' },
       ],
       theme: {
         colors: {

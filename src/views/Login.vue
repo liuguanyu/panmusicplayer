@@ -1,17 +1,17 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <h1 class="login-title">百度云音乐播放器</h1>
-        <p class="login-subtitle">请使用百度云盘客户端扫码或输入用户码登录</p>
+  <div class="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="w-[30rem] p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl mb-2">百度云音乐播放器</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">请使用百度云盘客户端扫码或输入用户码登录</p>
       </div>
       
-      <div class="login-content">
-        <div v-if="authCodeLoading" class="auth-code-loading">
+      <div class="min-h-[18.75rem] flex flex-col items-center justify-center">
+        <div v-if="authCodeLoading" class="flex items-center justify-center h-[18.75rem]">
           <a-spin tip="获取授权码中..." />
         </div>
         
-        <div v-else-if="authCodeError" class="auth-code-error">
+        <div v-else-if="authCodeError" class="flex items-center justify-center h-[18.75rem]">
           <a-result status="error" title="获取授权码失败">
             <template #extra>
               <a-button type="primary" @click="getAuthCode">
@@ -21,58 +21,61 @@
           </a-result>
         </div>
         
-        <div v-else-if="authCode" class="auth-code-container">
-          <div class="auth-code-wrapper">
+        <div v-else-if="authCode" class="w-full flex flex-col items-center justify-center">
+          <div class="w-full flex flex-col items-center justify-center mb-6">
             <!-- 二维码部分 -->
-            <div class="qrcode-section">
-              <h3>扫码登录</h3>
-              <div class="qrcode-wrapper">
-                <img :src="authCode.qrcode_url" alt="登录二维码" class="qrcode-img" />
+            <div class="w-full text-center mb-4">
+              <h3 class="text-lg mb-4">扫码登录</h3>
+              <div class="inline-block p-4 border border-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                <img :src="authCode.qrcode_url" alt="登录二维码" class="w-[12.5rem] h-[12.5rem]" />
               </div>
-              <div class="qrcode-tips">
-                <p>1. 打开百度网盘App</p>
-                <p>2. 点击"我的"，然后点击右上角扫一扫</p>
-                <p>3. 扫描二维码登录</p>
+              <div class="w-full p-4 bg-gray-50 dark:bg-gray-700 rounded mx-auto max-w-[18.75rem]">
+                <p class="mb-2 text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">1. 打开百度网盘App</p>
+                <p class="mb-2 text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">2. 点击"我的"，然后点击右上角扫一扫</p>
+                <p class="text-gray-500 dark:text-gray-400 text-left whitespace-nowrap">3. 扫描二维码登录</p>
               </div>
             </div>
             
             <!-- 分隔线 -->
-            <div class="divider">
-              <span>或</span>
+            <div class="w-full relative text-center my-6">
+              <div class="absolute top-1/2 left-0 w-full h-px bg-gray-200 dark:bg-gray-600"></div>
+              <span class="relative px-4 bg-white dark:bg-gray-800 text-gray-500">或</span>
             </div>
             
             <!-- 用户码部分 -->
-            <div class="user-code-section">
-              <h3>用户码登录</h3>
-              <div class="user-code-display">
-                <div class="user-code">{{ authCode.user_code }}</div>
+            <div class="w-full text-center mb-4">
+              <h3 class="text-lg mb-4">用户码登录</h3>
+              <div class="text-center mb-4">
+                <div class="inline-block text-2xl font-bold tracking-wider py-3 px-6 bg-gray-50 dark:bg-gray-700 rounded">
+                  {{ authCode.user_code }}
+                </div>
               </div>
               
-              <div class="verification-url">
-                <p>请访问以下网址并输入上方用户码：</p>
-                <a :href="authCode.verification_url" target="_blank" class="url-link">
+              <div class="text-center mb-4">
+                <p class="mb-2 text-gray-500 dark:text-gray-400">请访问以下网址并输入上方用户码：</p>
+                <a :href="authCode.verification_url" target="_blank" class="text-primary hover:underline">
                   {{ authCode.verification_url }}
                 </a>
               </div>
             </div>
           </div>
           
-          <div class="auth-code-status">
-            <p v-if="authCodeStatus === 'WAITING'" class="status-text">
+          <div class="mb-6 text-center">
+            <p v-if="authCodeStatus === 'WAITING'" class="text-base flex items-center justify-center">
               <a-badge status="processing" text="等待授权" />
             </p>
-            <p v-else-if="authCodeStatus === 'CONFIRMED'" class="status-text">
+            <p v-else-if="authCodeStatus === 'CONFIRMED'" class="text-base flex items-center justify-center">
               <a-badge status="success" text="授权成功，正在登录..." />
             </p>
-            <p v-else-if="authCodeStatus === 'EXPIRED'" class="status-text">
+            <p v-else-if="authCodeStatus === 'EXPIRED'" class="text-base flex items-center justify-center">
               <a-badge status="error" text="授权码已过期" />
-              <a-button type="primary" size="small" @click="getAuthCode" class="refresh-btn">
+              <a-button type="primary" size="small" @click="getAuthCode" class="ml-2">
                 刷新授权码
               </a-button>
             </p>
-            <p v-else-if="authCodeStatus === 'ERROR'" class="status-text">
+            <p v-else-if="authCodeStatus === 'ERROR'" class="text-base flex items-center justify-center">
               <a-badge status="error" :text="authCodeStatusMessage || '授权出错'" />
-              <a-button type="primary" size="small" @click="getAuthCode" class="refresh-btn">
+              <a-button type="primary" size="small" @click="getAuthCode" class="ml-2">
                 重新获取
               </a-button>
             </p>
@@ -209,189 +212,3 @@ onBeforeUnmount(() => {
   clearInterval();
 });
 </script>
-
-<style lang="less" scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: var(--color-bg-base);
-}
-
-.login-card {
-  width: 480px;
-  padding: 32px;
-  background-color: var(--color-bg-container);
-  border-radius: 8px;
-  box-shadow: var(--shadow-2);
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.login-title {
-  font-size: 24px;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
-}
-
-.login-subtitle {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.login-content {
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-.auth-code-loading,
-.auth-code-error {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-}
-
-.auth-code-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.auth-code-wrapper {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.qrcode-section,
-.user-code-section {
-  width: 100%;
-  text-align: center;
-  margin-bottom: 16px;
-  
-  h3 {
-    font-size: 18px;
-    margin-bottom: 16px;
-    color: var(--color-text-primary);
-  }
-}
-
-.qrcode-wrapper {
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  margin-bottom: 16px;
-  display: inline-block;
-}
-
-.qrcode-img {
-  width: 200px;
-  height: 200px;
-}
-
-.qrcode-tips {
-  width: 100%;
-  padding: 16px;
-  background-color: var(--color-bg-subtle);
-  border-radius: 4px;
-  margin: 0 auto;
-  max-width: 300px;
-  
-  p {
-    margin-bottom: 8px;
-    color: var(--color-text-secondary);
-    text-align: left;
-    white-space: nowrap;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
-
-.divider {
-  width: 100%;
-  position: relative;
-  text-align: center;
-  margin: 24px 0;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background-color: var(--color-border);
-  }
-  
-  span {
-    position: relative;
-    padding: 0 16px;
-    background-color: var(--color-bg-container);
-    color: var(--color-text-secondary);
-  }
-}
-
-.user-code-display {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.user-code {
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 2px;
-  padding: 12px 24px;
-  background-color: var(--color-bg-subtle);
-  border-radius: 4px;
-  color: var(--color-text-primary);
-  display: inline-block;
-}
-
-.verification-url {
-  text-align: center;
-  margin-bottom: 16px;
-  
-  p {
-    margin-bottom: 8px;
-    color: var(--color-text-secondary);
-  }
-}
-
-.url-link {
-  color: var(--color-primary);
-  text-decoration: none;
-  
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.auth-code-status {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.status-text {
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.refresh-btn {
-  margin-left: 8px;
-}
-</style>

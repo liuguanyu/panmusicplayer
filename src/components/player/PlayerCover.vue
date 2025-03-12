@@ -4,7 +4,7 @@
     <div class="relative mb-6">
       <div 
         class="aspect-square mx-auto rounded-lg shadow-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex justify-center items-center"
-        :class="isPlaying ? 'animate-spin-slow' : ''"
+        :class="isPlaying ? 'animate-spin duration-20s linear infinite' : ''"
       >
         <customer-service-outlined class="text-8xl text-gray-400" />
       </div>
@@ -48,17 +48,4 @@ const togglePlay = () => {
 };
 </script>
 
-<style scoped>
-.animate-spin-slow {
-  animation: spin 20s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>
+<!-- 使用UnoCSS替代了传统样式 -->

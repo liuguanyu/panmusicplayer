@@ -1,108 +1,61 @@
 @import 'ant-design-vue/dist/reset.css';
 @import './styles/variables.less';
-/* UnoCSS 样式会自动注入，无需手动导入 */
 
+/* 基础样式 */
 html, body {
-  margin: 0;
-  padding: 0;
   font-family: @font-family;
-  font-size: @font-size-md;
   color: var(--text-color);
   background-color: var(--background-color);
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+  @apply m-0 p-0 h-full w-full overflow-hidden text-base;
 }
 
 #app {
-  height: 100%;
-  width: 100%;
+  @apply h-full w-full;
 }
 
-/* 滚动条样式 */
+/* 滚动条样式 - 无法使用UnoCSS替代的特殊样式 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  @apply w-[6px] h-[6px];
 }
 
 ::-webkit-scrollbar-track {
   background: var(--secondary-background-color);
-  border-radius: 3px;
+  @apply rounded-[3px];
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--primary-color);
-  border-radius: 3px;
+  @apply rounded-[3px];
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-color);
 }
 
-/* 过渡动画 */
+/* 过渡动画类 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity @transition-duration @transition-timing-function;
+  @apply transition-opacity duration-300 ease-in-out;
 }
 
 .fade-enter-from,
 .fade-leave-to {
-  opacity: 0;
+  @apply opacity-0;
 }
 
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: transform @transition-duration @transition-timing-function;
+  @apply transition-transform duration-300 ease-in-out;
 }
 
 .slide-up-enter-from,
 .slide-up-leave-to {
-  transform: translateY(20px);
+  @apply translate-y-5;
 }
 
 /* 主题切换过渡 */
 body {
-  transition: background-color @transition-duration @transition-timing-function,
-              color @transition-duration @transition-timing-function;
+  @apply transition-colors duration-300 ease-in-out;
 }
 
-/* 禁用文本选择 */
-.no-select {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* 播放器控件样式 */
-.player-controls {
-  background-color: var(--player-controls);
-  color: white;
-  border-radius: @border-radius-lg;
-  padding: @spacing-md;
-}
-
-/* 可视化频谱样式 */
-.visualizer-container {
-  width: 100%;
-  height: 200px;
-  background-color: var(--secondary-background-color);
-  border-radius: @border-radius-lg;
-  overflow: hidden;
-}
-
-/* 歌词样式 */
-.lyrics-container {
-  height: 300px;
-  overflow-y: auto;
-  padding: @spacing-md;
-}
-
-.lyrics-line {
-  padding: @spacing-xs 0;
-  transition: all @transition-duration @transition-timing-function;
-}
-
-.lyrics-line.active {
-  color: var(--primary-color);
-  font-size: @font-size-lg;
-  font-weight: bold;
-}
+/* 自定义工具类已移至UnoCSS配置中 */

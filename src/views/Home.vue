@@ -4,7 +4,7 @@
       <a-col :span="24">
         <a-card class="mb-6">
           <template #cover>
-            <div class="h-40 bg-gradient-to-br from-primary to-primary-light flex flex-col justify-center items-center text-white text-center p-6">
+            <div class="h-40 bg-gradient-to-br from-blue-600 to-blue-400 flex flex-col items-center justify-center text-white text-center p-6">
               <h1 class="text-2xl mb-2 text-white">欢迎使用百度云音乐播放器</h1>
               <p class="text-base m-0">在这里，您可以播放百度云盘中的音频文件</p>
             </div>
@@ -43,9 +43,9 @@
       <a-col v-for="track in recentTracks" :key="track.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
         <a-card hoverable class="h-full" @click="playTrack(track)">
           <template #cover>
-            <div class="h-36 flex justify-center items-center bg-bg-subtle relative">
-              <customer-service-outlined class="text-5xl text-text-secondary" />
-              <div class="absolute inset-0 bg-black/50 flex justify-center items-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+            <div class="h-36 flex items-center justify-center bg-gray-100 dark:bg-gray-700 relative">
+              <customer-service-outlined class="text-5xl text-gray-500 dark:text-gray-400" />
+              <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
                 <play-circle-outlined class="text-5xl text-white" />
               </div>
             </div>
@@ -69,7 +69,7 @@
           <template #description>
             <span>
               暂无播放列表，
-              <a @click="handleCreatePlaylist">创建一个</a>
+              <a @click="handleCreatePlaylist" class="cursor-pointer">创建一个</a>
             </span>
           </template>
         </a-empty>
@@ -78,8 +78,8 @@
       <a-col v-for="playlist in playlists" :key="playlist.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="4">
         <a-card hoverable class="h-full" @click="navigateTo(`/playlist/${playlist.id}`)">
           <template #cover>
-            <div class="h-36 flex justify-center items-center bg-bg-subtle relative">
-              <unordered-list-outlined class="text-5xl text-text-secondary" />
+            <div class="h-36 flex items-center justify-center bg-gray-100 dark:bg-gray-700 relative">
+              <unordered-list-outlined class="text-5xl text-gray-500 dark:text-gray-400" />
             </div>
           </template>
           <a-card-meta :title="playlist.name" :description="`${playlist.trackCount || 0}首歌曲`" />
@@ -221,7 +221,3 @@ onMounted(async () => {
 const playlistName = ref('');
 const playlistDescription = ref('');
 </script>
-
-<style lang="less" scoped>
-/* 使用UnoCSS原子化类替代了传统CSS */
-</style>

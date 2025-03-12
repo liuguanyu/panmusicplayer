@@ -1,13 +1,13 @@
 <template>
-  <div class="audio-player">
-    <div class="audio-player-container">
-      <div class="player-controls">
+  <div class="fixed bottom-0 left-0 right-0 h-20 bg-player-background border-t border-border-color z-100">
+    <div class="flex h-full items-center px-4">
+      <div class="flex-1 min-w-300px">
         <player-controls />
       </div>
-      <div class="player-info">
+      <div class="flex-1 flex justify-center">
         <player-cover />
       </div>
-      <div class="player-playlist">
+      <div class="flex-1 flex justify-end">
         <player-playlist />
       </div>
     </div>
@@ -20,39 +20,4 @@ import PlayerCover from '@/components/player/PlayerCover.vue';
 import PlayerPlaylist from '@/components/player/PlayerPlaylist.vue';
 </script>
 
-<style lang="less" scoped>
-.audio-player {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background-color: var(--player-background);
-  border-top: 1px solid var(--border-color);
-  z-index: 100;
-  
-  &-container {
-    display: flex;
-    height: 100%;
-    align-items: center;
-    padding: 0 16px;
-  }
-  
-  .player-controls {
-    flex: 1;
-    min-width: 300px;
-  }
-  
-  .player-info {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .player-playlist {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-</style>
+<!-- 使用UnoCSS替代了传统样式 -->
