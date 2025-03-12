@@ -25,6 +25,13 @@ export function usePlayerControls(state, { initAudio, fetchLyrics }) {
         
         // 获取歌词
         fetchLyrics(track);
+        
+        // 添加到最近播放记录
+        try {
+          await window.electronAPI.addRecentTrack(track);
+        } catch (err) {
+          console.error('添加到最近播放记录失败:', err);
+        }
       } catch (error) {
         console.error('播放失败:', error);
         state.setError('播放失败');

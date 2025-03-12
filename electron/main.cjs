@@ -106,6 +106,27 @@ ipcMain.handle('save-playlists', (event, playlists) => {
   return true;
 });
 
+// 处理最近播放记录
+ipcMain.handle('get-recent-tracks', () => {
+  return store.get('recentTracks', []);
+});
+
+ipcMain.handle('add-recent-track', (event, track) => {
+  const recentTracks = store.get('recentTracks', []);
+  
+  // 如果已存在相同ID的曲目，先移除它
+  const filteredTracks = recentTracks.filter(item => item.id !== track.id);
+  
+  // 将新曲目添加到列表开头
+  filteredTracks.unshift(track);
+  
+  // 只保留最近的20首
+  const updatedTracks = filteredTracks.slice(0, 20);
+  
+  store.set('recentTracks', updatedTracks);
+  return updatedTracks;
+});
+
 // 处理用户设置
 ipcMain.handle('get-settings', () => {
   return store.get('settings', {
@@ -161,10 +182,41 @@ ipcMain.handle('baidu-pan-login', async (event, qrCode) => {
   }
 });
 
-// 设备码模式授权相关处理函数
+// 授权码模式授权相关处理函数
+ipcMain.handle('baidu-pan-get-auth-code', async () => {
+  try {
+    const result = await baiduPanService.getAuthCode();
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('获取百度云盘授权码失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('baidu-pan-check-auth-code-status', async (event, authCode) => {
+  try {
+    const result = await baiduPanService.checkAuthCodeStatus(authCode);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('检查百度云盘授权码状态失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('baidu-pan-login-with-auth-code', async (event, authCode) => {
+  try {
+    const result = await baiduPanService.loginWithAuthCode(authCode);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('使用授权码登录百度云盘失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 设备码模式授权相关处理函数（保留向后兼容性）
 ipcMain.handle('baidu-pan-get-device-code', async () => {
   try {
-    const result = await baiduPanService.getDeviceCode();
+    const result = await baiduPanService.getAuthCode();
     return { success: true, data: result };
   } catch (error) {
     console.error('获取百度云盘设备码失败:', error);
@@ -174,7 +226,7 @@ ipcMain.handle('baidu-pan-get-device-code', async () => {
 
 ipcMain.handle('baidu-pan-check-device-code-status', async (event, deviceCode) => {
   try {
-    const result = await baiduPanService.checkDeviceCodeStatus(deviceCode);
+    const result = await baiduPanService.checkAuthCodeStatus(deviceCode);
     return { success: true, data: result };
   } catch (error) {
     console.error('检查百度云盘设备码状态失败:', error);
@@ -184,7 +236,7 @@ ipcMain.handle('baidu-pan-check-device-code-status', async (event, deviceCode) =
 
 ipcMain.handle('baidu-pan-login-with-device-code', async (event, deviceCode) => {
   try {
-    const result = await baiduPanService.loginWithDeviceCode(deviceCode);
+    const result = await baiduPanService.loginWithAuthCode(deviceCode);
     return { success: true, data: result };
   } catch (error) {
     console.error('使用设备码登录百度云盘失败:', error);

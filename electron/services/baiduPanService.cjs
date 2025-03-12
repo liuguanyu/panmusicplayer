@@ -211,8 +211,8 @@ const getValidToken = async () => {
   return token;
 };
 
-// 获取设备码和用户码
-const getDeviceCode = async () => {
+// 获取授权码（设备码和用户码）
+const getAuthCode = async () => {
   try {
     await loadConfig();
     
@@ -222,7 +222,7 @@ const getDeviceCode = async () => {
       await saveConfig(config);
     }
 
-    console.log('正在获取设备码，使用参数:', {
+    console.log('正在获取授权码，使用参数:', {
       client_id: config.appKey,
       response_type: 'device_code',
       scope: config.scope,
@@ -240,10 +240,10 @@ const getDeviceCode = async () => {
       },
     });
 
-    console.log('设备码API响应:', response.data);
+    console.log('授权码API响应:', response.data);
 
     if (response.data.error) {
-      throw new Error(`获取设备码失败: ${response.data.error_description || response.data.error}`);
+      throw new Error(`获取授权码失败: ${response.data.error_description || response.data.error}`);
     }
 
     return {
@@ -251,19 +251,23 @@ const getDeviceCode = async () => {
       user_code: response.data.user_code,
       verification_url: response.data.verification_url || 'https://openapi.baidu.com/device',
       qrcode_url: response.data.qrcode_url,
+      imgUrl: response.data.qrcode_url, // 为了兼容前端代码
       expires_in: response.data.expires_in,
       interval: response.data.interval || 5,
     };
   } catch (error) {
-    console.error('获取设备码失败:', error);
+    console.error('获取授权码失败:', error);
     throw error;
   }
 };
 
-// 检查设备码状态
-const checkDeviceCodeStatus = async (deviceCode) => {
+// 检查授权码状态
+const checkAuthCodeStatus = async (authCode) => {
   try {
     await loadConfig();
+    
+    // 支持传入完整的授权码对象或仅设备码字符串
+    const deviceCode = typeof authCode === 'string' ? authCode : authCode.device_code;
     
     const response = await axios.get(`${config.oauthUrl}/token`, {
       params: {
@@ -279,13 +283,25 @@ const checkDeviceCodeStatus = async (deviceCode) => {
 
     // 如果成功获取到token，表示用户已授权
     if (response.data.access_token) {
+      // 创建token对象
+      const token = {
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token,
+        expires_in: response.data.expires_in,
+        expires_at: Date.now() + response.data.expires_in * 1000,
+        scope: response.data.scope,
+      };
+      
+      // 保存token到本地文件
+      await saveToken(token);
+      
+      // 返回状态，但不包含完整token对象，避免序列化问题
       return {
         status: 'CONFIRMED',
-        token: {
-          access_token: response.data.access_token,
-          refresh_token: response.data.refresh_token,
+        // 只返回必要的信息
+        tokenInfo: {
+          access_token: response.data.access_token.substring(0, 10) + '...',
           expires_in: response.data.expires_in,
-          expires_at: Date.now() + response.data.expires_in * 1000,
           scope: response.data.scope,
         }
       };
@@ -299,7 +315,7 @@ const checkDeviceCodeStatus = async (deviceCode) => {
       
       // 授权码过期
       if (errorData.error === 'expired_token') {
-        return { status: 'EXPIRED', message: '设备码已过期，请重新获取' };
+        return { status: 'EXPIRED', message: '授权码已过期，请重新获取' };
       }
       
       // 用户取消授权
@@ -329,97 +345,40 @@ const checkDeviceCodeStatus = async (deviceCode) => {
       };
     }
     
-    console.error('检查设备码状态失败:', error);
+    console.error('检查授权码状态失败:', error);
     return { status: 'ERROR', message: error.message || '网络错误' };
   }
 };
 
-// 使用设备码获取令牌
-const getTokenByDeviceCode = async (deviceCode) => {
+// 使用授权码登录
+const loginWithAuthCode = async (authCode) => {
   try {
-    await loadConfig();
+    // 支持传入完整的授权码对象或仅设备码字符串
+    const deviceCode = typeof authCode === 'string' ? authCode : authCode.device_code;
     
-    const response = await axios.get(
-      `${config.oauthUrl}/token`,
-      {
-        params: {
-          grant_type: 'device_token',
-          code: deviceCode,
-          client_id: config.appKey,
-          client_secret: config.secretKey,
-        },
-        headers: {
-          'User-Agent': 'pan.baidu.com',
-        },
-      }
-    );
-
-    if (!response.data.access_token) {
-      throw new Error('获取令牌失败: 未返回access_token');
+    // 检查授权码状态
+    const status = await checkAuthCodeStatus(deviceCode);
+    
+    if (status.status !== 'CONFIRMED') {
+      throw new Error('授权码未确认');
     }
 
-    const token = {
-      access_token: response.data.access_token,
-      refresh_token: response.data.refresh_token,
-      expires_in: response.data.expires_in,
-      expires_at: Date.now() + response.data.expires_in * 1000,
-      scope: response.data.scope,
-    };
-
-    await saveToken(token);
-    return token;
-  } catch (error) {
-    // 检查错误类型
-    if (error.response && error.response.data) {
-      const errorData = error.response.data;
-      
-      // 授权码过期
-      if (errorData.error === 'expired_token') {
-        throw new Error('设备码已过期，请重新获取');
-      }
-      
-      // 用户取消授权
-      if (errorData.error === 'authorization_declined') {
-        throw new Error('用户已取消授权');
-      }
-      
-      // 授权码未被使用，继续等待
-      if (errorData.error === 'authorization_pending') {
-        throw new Error('等待用户授权，请稍后再试');
-      }
-      
-      // 请求过于频繁
-      if (errorData.error === 'slow_down') {
-        throw new Error('请求过于频繁，请降低请求频率');
-      }
-
-      // 其他错误
-      throw new Error(errorData.error_description || errorData.error || '获取令牌失败');
+    // 令牌已经在checkAuthCodeStatus中保存，直接加载
+    const token = await loadToken();
+    if (!token) {
+      throw new Error('获取令牌失败');
     }
-    
-    console.error('获取令牌失败:', error);
-    throw new Error(error.message || '网络错误');
-  }
-};
-
-// 使用设备码登录
-const loginWithDeviceCode = async (deviceCode) => {
-  try {
-    // 检查设备码状态
-    const status = await checkDeviceCodeStatus(deviceCode);
-    
-    if (status.status !== 'CONFIRMED' || !status.token) {
-      throw new Error('设备码未确认或令牌无效');
-    }
-
-    // 保存令牌
-    await saveToken(status.token);
     
     // 获取用户信息
-    const userInfo = await getUserInfo(status.token);
+    const userInfo = await getUserInfo(token);
     
     return {
-      token: status.token,
+      token: {
+        // 只返回必要的信息，避免序列化问题
+        access_token: token.access_token.substring(0, 10) + '...',
+        expires_in: token.expires_in,
+        scope: token.scope,
+      },
       user: userInfo,
     };
   } catch (error) {
@@ -706,14 +665,52 @@ const getLyricContent = async (lrcFile) => {
   }
 };
 
+// 获取登录二维码 - 直接调用getAuthCode，因为它们使用相同的API
+const getLoginQRCode = async () => {
+  try {
+    const result = await getAuthCode();
+    return result;
+  } catch (error) {
+    console.error('获取登录二维码失败:', error);
+    throw error;
+  }
+};
+
+// 检查二维码状态 - 直接调用checkAuthCodeStatus，因为它们使用相同的API
+const checkQRCodeStatus = async (qrCode) => {
+  try {
+    const result = await checkAuthCodeStatus(qrCode);
+    return result;
+  } catch (error) {
+    console.error('检查二维码状态失败:', error);
+    throw error;
+  }
+};
+
+// 使用二维码登录 - 直接调用loginWithAuthCode，因为它们使用相同的API
+const login = async (qrCode) => {
+  try {
+    const result = await loginWithAuthCode(qrCode);
+    return result;
+  } catch (error) {
+    console.error('登录失败:', error);
+    throw error;
+  }
+};
+
 // 导出函数
 module.exports = {
   loadConfig,
   saveConfig,
-  getDeviceCode,
-  checkDeviceCodeStatus,
-  getTokenByDeviceCode,
-  loginWithDeviceCode,
+  getLoginQRCode,
+  checkQRCodeStatus,
+  login,
+  getAuthCode,
+  checkAuthCodeStatus,
+  loginWithAuthCode,
+  getDeviceCode: getAuthCode, // 为了向后兼容
+  checkDeviceCodeStatus: checkAuthCodeStatus, // 为了向后兼容
+  loginWithDeviceCode: loginWithAuthCode, // 为了向后兼容
   logout,
   verifyToken,
   getUserInfo,

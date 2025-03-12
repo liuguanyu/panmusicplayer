@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPlaylists: () => ipcRenderer.invoke('get-playlists'),
   savePlaylists: (playlists) => ipcRenderer.invoke('save-playlists', playlists),
   
+  // 最近播放记录
+  getRecentTracks: () => ipcRenderer.invoke('get-recent-tracks'),
+  addRecentTrack: (track) => ipcRenderer.invoke('add-recent-track', track),
+  
   // 设置管理
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
@@ -22,7 +26,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getLoginQRCode: () => ipcRenderer.invoke('baidu-pan-get-login-qrcode'),
     checkQRCodeStatus: (qrCode) => ipcRenderer.invoke('baidu-pan-check-qrcode-status', qrCode),
     login: (qrCode) => ipcRenderer.invoke('baidu-pan-login', qrCode),
-    // 设备码模式授权
+    // 授权码模式授权（统一的二维码和设备码登录）
+    getAuthCode: () => ipcRenderer.invoke('baidu-pan-get-auth-code'),
+    checkAuthCodeStatus: (authCode) => ipcRenderer.invoke('baidu-pan-check-auth-code-status', authCode),
+    loginWithAuthCode: (authCode) => ipcRenderer.invoke('baidu-pan-login-with-auth-code', authCode),
+    // 设备码模式授权（保留向后兼容性）
     getDeviceCode: () => ipcRenderer.invoke('baidu-pan-get-device-code'),
     checkDeviceCodeStatus: (deviceCode) => ipcRenderer.invoke('baidu-pan-check-device-code-status', deviceCode),
     loginWithDeviceCode: (deviceCode) => ipcRenderer.invoke('baidu-pan-login-with-device-code', deviceCode),
