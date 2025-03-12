@@ -33,15 +33,19 @@ app.mount('#app');
 const setTheme = (theme) => {
   if (theme === 'dark') {
     document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-theme', 'dark');
   } else if (theme === 'light') {
     document.documentElement.classList.remove('dark');
+    document.documentElement.setAttribute('data-theme', 'light');
   } else {
     // 跟随系统
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (prefersDark) {
       document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
   }
 };

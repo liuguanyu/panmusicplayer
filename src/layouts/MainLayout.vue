@@ -6,7 +6,7 @@
       :trigger="null"
       collapsible
       class="overflow-auto h-screen fixed left-0 top-0 bottom-0 z-10"
-      :theme="theme"
+      :theme="theme === 'dark' ? 'dark' : 'light'"
     >
       <div class="h-16 p-4 flex items-center overflow-hidden">
         <img src="@/assets/vue.svg" alt="百度云音乐" class="h-8 w-8 mr-2" />
@@ -14,7 +14,7 @@
       </div>
       <a-menu
         v-model:selectedKeys="selectedKeys"
-        :theme="theme"
+        :theme="theme === 'dark' ? 'dark' : 'light'"
         mode="inline"
       >
         <a-menu-item v-for="route in menuRoutes" :key="route.name" @click="() => navigateTo(route.path)">

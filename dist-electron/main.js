@@ -28395,7 +28395,7 @@ followRedirects$1.exports.wrap = wrap;
 var followRedirectsExports = followRedirects$1.exports;
 /*! Axios v1.8.2 Copyright (c) 2025 Matt Zabriskie and contributors */
 const FormData$1 = form_data;
-const crypto$1 = require$$1$2;
+const crypto$2 = require$$1$2;
 const url = require$$0$4;
 const proxyFromEnv = proxyFromEnv$1;
 const http = require$$3$2;
@@ -28409,7 +28409,7 @@ function _interopDefaultLegacy(e) {
   return e && typeof e === "object" && "default" in e ? e : { "default": e };
 }
 const FormData__default = /* @__PURE__ */ _interopDefaultLegacy(FormData$1);
-const crypto__default = /* @__PURE__ */ _interopDefaultLegacy(crypto$1);
+const crypto__default = /* @__PURE__ */ _interopDefaultLegacy(crypto$2);
 const url__default = /* @__PURE__ */ _interopDefaultLegacy(url);
 const proxyFromEnv__default = /* @__PURE__ */ _interopDefaultLegacy(proxyFromEnv);
 const http__default = /* @__PURE__ */ _interopDefaultLegacy(http);
@@ -31533,27 +31533,27 @@ function createInstance(defaultConfig) {
   };
   return instance;
 }
-const axios$1 = createInstance(defaults$1);
-axios$1.Axios = Axios$1;
-axios$1.CanceledError = CanceledError;
-axios$1.CancelToken = CancelToken$1;
-axios$1.isCancel = isCancel;
-axios$1.VERSION = VERSION;
-axios$1.toFormData = toFormData;
-axios$1.AxiosError = AxiosError;
-axios$1.Cancel = axios$1.CanceledError;
-axios$1.all = function all(promises) {
+const axios$2 = createInstance(defaults$1);
+axios$2.Axios = Axios$1;
+axios$2.CanceledError = CanceledError;
+axios$2.CancelToken = CancelToken$1;
+axios$2.isCancel = isCancel;
+axios$2.VERSION = VERSION;
+axios$2.toFormData = toFormData;
+axios$2.AxiosError = AxiosError;
+axios$2.Cancel = axios$2.CanceledError;
+axios$2.all = function all(promises) {
   return Promise.all(promises);
 };
-axios$1.spread = spread;
-axios$1.isAxiosError = isAxiosError;
-axios$1.mergeConfig = mergeConfig;
-axios$1.AxiosHeaders = AxiosHeaders$1;
-axios$1.formToJSON = (thing) => formDataToJSON(utils$1.isHTMLForm(thing) ? new FormData(thing) : thing);
-axios$1.getAdapter = adapters.getAdapter;
-axios$1.HttpStatusCode = HttpStatusCode$1;
-axios$1.default = axios$1;
-var axios_1 = axios$1;
+axios$2.spread = spread;
+axios$2.isAxiosError = isAxiosError;
+axios$2.mergeConfig = mergeConfig;
+axios$2.AxiosHeaders = AxiosHeaders$1;
+axios$2.formToJSON = (thing) => formDataToJSON(utils$1.isHTMLForm(thing) ? new FormData(thing) : thing);
+axios$2.getAdapter = adapters.getAdapter;
+axios$2.HttpStatusCode = HttpStatusCode$1;
+axios$2.default = axios$2;
+var axios_1 = axios$2;
 var baiduPanConfig;
 var hasRequiredBaiduPanConfig;
 function requireBaiduPanConfig() {
@@ -31585,8 +31585,8 @@ function requireBaiduPanConfig() {
   };
   return baiduPanConfig;
 }
-const axios = axios_1;
-const crypto = require$$1$2;
+const axios$1 = axios_1;
+const crypto$1 = require$$1$2;
 const querystring = require$$2;
 const { app: app$1 } = require$$1$3;
 const { join: join$1 } = require$$0$2;
@@ -31596,13 +31596,13 @@ const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
 const mkdir = promisify(fs.mkdir);
 const exists = promisify(fs.exists);
-let config;
+let config$1;
 try {
-  config = requireBaiduPanConfig();
+  config$1 = requireBaiduPanConfig();
 } catch (error2) {
   console.error("无法加载百度云盘配置文件，请确保已创建 electron/config/baiduPanConfig.cjs 文件");
   console.error("可以复制 electron/config/baiduPanConfig.example.cjs 并填入你的实际配置");
-  config = {
+  config$1 = {
     appId: "",
     appKey: "",
     secretKey: "",
@@ -31624,12 +31624,12 @@ const ensureConfigDir = async () => {
 };
 const saveConfig = async (newConfig) => {
   await ensureConfigDir();
-  Object.assign(config, newConfig);
+  Object.assign(config$1, newConfig);
   await writeFile(
     join$1(configPath, "config.json"),
-    JSON.stringify(config, null, 2)
+    JSON.stringify(config$1, null, 2)
   );
-  return config;
+  return config$1;
 };
 const loadConfig = async () => {
   await ensureConfigDir();
@@ -31637,12 +31637,12 @@ const loadConfig = async () => {
     const configFile = join$1(configPath, "config.json");
     if (await exists(configFile)) {
       const data = await readFile(configFile, "utf8");
-      Object.assign(config, JSON.parse(data));
+      Object.assign(config$1, JSON.parse(data));
     }
-    return config;
+    return config$1;
   } catch (error2) {
     console.error("加载配置失败:", error2);
-    return config;
+    return config$1;
   }
 };
 const saveToken = async (token) => {
@@ -31670,53 +31670,15 @@ const clearToken = async () => {
     console.error("清除令牌失败:", error2);
   }
 };
-const generateSignature = (params) => {
-  const sortedParams = Object.keys(params).sort().reduce((result, key) => {
-    result[key] = params[key];
-    return result;
-  }, {});
-  let signStr = "";
-  for (const key in sortedParams) {
-    if (key !== "sign" && sortedParams[key] !== "") {
-      signStr += key + "=" + sortedParams[key];
-    }
-  }
-  signStr += config.signKey;
-  return crypto.createHash("md5").update(signStr).digest("hex");
-};
-const createApiClient = (token) => {
-  const client = axios.create({
-    baseURL: config.apiBaseUrl,
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "pan.baidu.com"
-    }
-  });
-  client.interceptors.request.use((config2) => {
-    const params = {
-      ...config2.params,
-      access_token: token.access_token,
-      app_id: config2.appId,
-      device_id: config2.deviceId,
-      device_name: config2.deviceName,
-      timestamp: Math.floor(Date.now() / 1e3),
-      version: "1.0.0"
-    };
-    params.sign = generateSignature(params);
-    config2.params = params;
-    return config2;
-  });
-  return client;
-};
 const refreshToken = async (token) => {
   try {
-    const response = await axios.post(
-      `${config.oauthUrl}/token`,
+    const response = await axios$1.post(
+      `${config$1.oauthUrl}/token`,
       querystring.stringify({
         grant_type: "refresh_token",
         refresh_token: token.refresh_token,
-        client_id: config.appKey,
-        client_secret: config.secretKey
+        client_id: config$1.appKey,
+        client_secret: config$1.secretKey
       }),
       {
         headers: {
@@ -31751,20 +31713,20 @@ const getValidToken = async () => {
 const getAuthCode = async () => {
   try {
     await loadConfig();
-    if (!config.deviceId) {
-      config.deviceId = crypto.randomUUID();
-      await saveConfig(config);
+    if (!config$1.deviceId) {
+      config$1.deviceId = crypto$1.randomUUID();
+      await saveConfig(config$1);
     }
     console.log("正在获取授权码，使用参数:", {
-      client_id: config.appKey,
+      client_id: config$1.appKey,
       response_type: "device_code",
-      scope: config.scope
+      scope: config$1.scope
     });
-    const response = await axios.get(`${config.oauthUrl}/device/code`, {
+    const response = await axios$1.get(`${config$1.oauthUrl}/device/code`, {
       params: {
         response_type: "device_code",
-        client_id: config.appKey,
-        scope: config.scope
+        client_id: config$1.appKey,
+        scope: config$1.scope
       },
       headers: {
         "User-Agent": "pan.baidu.com"
@@ -31793,12 +31755,12 @@ const checkAuthCodeStatus = async (authCode) => {
   try {
     await loadConfig();
     const deviceCode = typeof authCode === "string" ? authCode : authCode.device_code;
-    const response = await axios.get(`${config.oauthUrl}/token`, {
+    const response = await axios$1.get(`${config$1.oauthUrl}/token`, {
       params: {
         grant_type: "device_token",
         code: deviceCode,
-        client_id: config.appKey,
-        client_secret: config.secretKey
+        client_id: config$1.appKey,
+        client_secret: config$1.secretKey
       },
       headers: {
         "User-Agent": "pan.baidu.com"
@@ -31884,7 +31846,7 @@ const logout = async () => {
     const token = await loadToken();
     if (token) {
       try {
-        await axios.get(`${config.oauthUrl}/revoke`, {
+        await axios$1.get(`${config$1.oauthUrl}/revoke`, {
           params: {
             access_token: token.access_token
           }
@@ -31915,7 +31877,7 @@ const verifyToken = async () => {
       }
     }
     try {
-      const response = await axios.get(`${config.oauthUrl}/tokeninfo`, {
+      const response = await axios$1.get(`${config$1.oauthUrl}/tokeninfo`, {
         params: {
           access_token: token.access_token
         }
@@ -31933,7 +31895,7 @@ const verifyToken = async () => {
 const getUserInfo = async (tokenObj) => {
   try {
     const token = tokenObj || await getValidToken();
-    const response = await axios.get(`${config.apiBaseUrl}/xpan/nas`, {
+    const response = await axios$1.get(`${config$1.apiBaseUrl}/xpan/nas`, {
       params: {
         method: "uinfo",
         access_token: token.access_token
@@ -31955,9 +31917,109 @@ const getUserInfo = async (tokenObj) => {
     throw error2;
   }
 };
+const getLoginQRCode = async () => {
+  try {
+    const result = await getAuthCode();
+    return result;
+  } catch (error2) {
+    console.error("获取登录二维码失败:", error2);
+    throw error2;
+  }
+};
+const checkQRCodeStatus = async (qrCode) => {
+  try {
+    const result = await checkAuthCodeStatus(qrCode);
+    return result;
+  } catch (error2) {
+    console.error("检查二维码状态失败:", error2);
+    throw error2;
+  }
+};
+const login = async (qrCode) => {
+  try {
+    const result = await loginWithAuthCode(qrCode);
+    return result;
+  } catch (error2) {
+    console.error("登录失败:", error2);
+    throw error2;
+  }
+};
+var baiduPanAuthService = {
+  loadConfig,
+  saveConfig,
+  getLoginQRCode,
+  checkQRCodeStatus,
+  login,
+  getAuthCode,
+  checkAuthCodeStatus,
+  loginWithAuthCode,
+  getDeviceCode: getAuthCode,
+  // 为了向后兼容
+  checkDeviceCodeStatus: checkAuthCodeStatus,
+  // 为了向后兼容
+  loginWithDeviceCode: loginWithAuthCode,
+  // 为了向后兼容
+  logout,
+  verifyToken,
+  getUserInfo,
+  getValidToken,
+  loadToken,
+  saveToken,
+  refreshToken,
+  clearToken
+};
+const axios = axios_1;
+const crypto = require$$1$2;
+const authService = baiduPanAuthService;
+let config;
+const initialize = async () => {
+  config = await authService.loadConfig();
+  return config;
+};
+const generateSignature = (params) => {
+  const sortedParams = Object.keys(params).sort().reduce((result, key) => {
+    result[key] = params[key];
+    return result;
+  }, {});
+  let signStr = "";
+  for (const key in sortedParams) {
+    if (key !== "sign" && sortedParams[key] !== "") {
+      signStr += key + "=" + sortedParams[key];
+    }
+  }
+  signStr += config.signKey;
+  return crypto.createHash("md5").update(signStr).digest("hex");
+};
+const createApiClient = (token) => {
+  const client = axios.create({
+    baseURL: config.apiBaseUrl,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "pan.baidu.com"
+    }
+  });
+  client.interceptors.request.use((config2) => {
+    const params = {
+      ...config2.params,
+      access_token: token.access_token,
+      app_id: config2.appId,
+      device_id: config2.deviceId,
+      device_name: config2.deviceName,
+      timestamp: Math.floor(Date.now() / 1e3),
+      version: "1.0.0"
+    };
+    params.sign = generateSignature(params);
+    config2.params = params;
+    return config2;
+  });
+  return client;
+};
 const getFileList = async (path2 = "/", options = {}) => {
   try {
-    const token = await getValidToken();
+    if (!config) {
+      await initialize();
+    }
+    const token = await authService.getValidToken();
     const client = createApiClient(token);
     const params = {
       method: "list",
@@ -31993,7 +32055,10 @@ const getAudioFileList = async (path2 = "/", options = {}) => {
 };
 const getFileDownloadLink = async (fsId) => {
   try {
-    const token = await getValidToken();
+    if (!config) {
+      await initialize();
+    }
+    const token = await authService.getValidToken();
     const client = createApiClient(token);
     const params = {
       method: "filemetas",
@@ -32029,7 +32094,10 @@ const getFileDownloadLink = async (fsId) => {
 };
 const searchFiles = async (keyword2, path2 = "/", options = {}) => {
   try {
-    const token = await getValidToken();
+    if (!config) {
+      await initialize();
+    }
+    const token = await authService.getValidToken();
     const client = createApiClient(token);
     const params = {
       method: "search",
@@ -32092,51 +32160,27 @@ const getLyricContent = async (lrcFile) => {
     return null;
   }
 };
-const getLoginQRCode = async () => {
-  try {
-    const result = await getAuthCode();
-    return result;
-  } catch (error2) {
-    console.error("获取登录二维码失败:", error2);
-    throw error2;
-  }
-};
-const checkQRCodeStatus = async (qrCode) => {
-  try {
-    const result = await checkAuthCodeStatus(qrCode);
-    return result;
-  } catch (error2) {
-    console.error("检查二维码状态失败:", error2);
-    throw error2;
-  }
-};
-const login = async (qrCode) => {
-  try {
-    const result = await loginWithAuthCode(qrCode);
-    return result;
-  } catch (error2) {
-    console.error("登录失败:", error2);
-    throw error2;
-  }
-};
+initialize().catch(console.error);
 var baiduPanService$1 = {
-  loadConfig,
-  saveConfig,
-  getLoginQRCode,
-  checkQRCodeStatus,
-  login,
-  getAuthCode,
-  checkAuthCodeStatus,
-  loginWithAuthCode,
-  getDeviceCode: getAuthCode,
+  // 从认证服务导出的函数
+  loadConfig: authService.loadConfig,
+  saveConfig: authService.saveConfig,
+  getLoginQRCode: authService.getLoginQRCode,
+  checkQRCodeStatus: authService.checkQRCodeStatus,
+  login: authService.login,
+  getAuthCode: authService.getAuthCode,
+  checkAuthCodeStatus: authService.checkAuthCodeStatus,
+  loginWithAuthCode: authService.loginWithAuthCode,
+  getDeviceCode: authService.getDeviceCode,
   // 为了向后兼容
-  checkDeviceCodeStatus: checkAuthCodeStatus,
+  checkDeviceCodeStatus: authService.checkDeviceCodeStatus,
   // 为了向后兼容
-  loginWithDeviceCode: loginWithAuthCode,
+  loginWithDeviceCode: authService.loginWithDeviceCode,
   // 为了向后兼容
-  logout,
-  verifyToken,
-  getUserInfo,
+  logout: authService.logout,
+  verifyToken: authService.verifyToken,
+  getUserInfo: authService.getUserInfo,
+  // 本地实现的文件操作函数
   getFileList,
   getAudioFileList,
   getFileDownloadLink,

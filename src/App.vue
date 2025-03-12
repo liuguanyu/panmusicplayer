@@ -1,9 +1,50 @@
 <script setup>
-// 使用路由视图
+import { computed, watch, onMounted } from 'vue';
+import { ConfigProvider } from 'ant-design-vue';
+import { useSettingsStore } from '@/stores/settings';
+
+const settingsStore = useSettingsStore();
+
+// 计算当前主题
+const isDarkMode = computed(() => {
+  if (settingsStore.theme === 'dark') {
+    return true;
+  } else if (settingsStore.theme === 'light') {
+    return false;
+  } else {
+    // 跟随系统
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+});
+
+// Ant Design Vue 主题配置
+const theme = computed(() => ({
+  algorithm: isDarkMode.value ? ConfigProvider.darkAlgorithm : ConfigProvider.defaultAlgorithm
+}));
+
+// 监听暗色模式变化，添加或移除 .dark 类
+const updateDarkModeClass = (isDark) => {
+  if (isDark) {
+    document.body.classList.add('dark');
+  } else {
+    document.body.classList.remove('dark');
+  }
+};
+
+// 初始化和监听主题变化
+onMounted(() => {
+  updateDarkModeClass(isDarkMode.value);
+});
+
+watch(isDarkMode, (newValue) => {
+  updateDarkModeClass(newValue);
+});
 </script>
 
 <template>
-  <router-view />
+  <config-provider :theme="theme">
+    <router-view />
+  </config-provider>
 </template>
 
 <style>
