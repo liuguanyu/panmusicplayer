@@ -312,6 +312,7 @@ onBeforeUnmount(() => {
     margin-bottom: 8px;
     color: var(--color-text-secondary);
     text-align: left;
+    white-space: nowrap;
     
     &:last-child {
       margin-bottom: 0;
