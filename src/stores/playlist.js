@@ -36,15 +36,24 @@ export const usePlaylistStore = defineStore('playlist', () => {
     error.value = null;
     
     try {
-      const result = await window.electronAPI.getPlaylistDetail(id);
+      // 获取所有播放列表
+      const allPlaylists = await window.electronAPI.getPlaylists();
       
-      // 更新播放列表
-      const index = playlists.value.findIndex(p => p.id === id);
-      if (index !== -1) {
-        playlists.value[index] = result;
+      // 查找指定ID的播放列表
+      const result = allPlaylists.find(playlist => playlist.id === id);
+      
+      if (result) {
+        // 更新播放列表
+        const index = playlists.value.findIndex(p => p.id === id);
+        if (index !== -1) {
+          playlists.value[index] = result;
+        } else {
+          playlists.value.push(result);
+        }
+        
+        currentPlaylistId.value = id;
       }
       
-      currentPlaylistId.value = id;
       return result;
     } catch (err) {
       console.error('获取播放列表详情失败:', err);
@@ -199,7 +208,7 @@ export const usePlaylistStore = defineStore('playlist', () => {
     error.value = null;
     
     try {
-      return await window.electronAPI.searchAudioFiles(keyword, path);
+      return await window.electronAPI.baiduPan.searchAudioFiles(keyword, { path });
     } catch (err) {
       console.error('搜索音频文件失败:', err);
       error.value = '搜索音频文件失败';
@@ -215,7 +224,7 @@ export const usePlaylistStore = defineStore('playlist', () => {
     error.value = null;
     
     try {
-      return await window.electronAPI.getAudioFilesInFolder(path);
+      return await window.electronAPI.baiduPan.getAudioFileList(path);
     } catch (err) {
       console.error('获取文件夹中的音频文件失败:', err);
       error.value = '获取文件夹中的音频文件失败';
