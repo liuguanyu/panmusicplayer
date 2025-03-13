@@ -142,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, h } from 'vue';
+import { ref, reactive, computed, onMounted, onActivated, h, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { 
@@ -299,7 +299,10 @@ const addLocalTracks = async () => {
     
     await playlistStore.addTracksToPlaylist(playlistId.value, tracks);
     message.success(`已添加 ${tracks.length} 首歌曲`);
+    // 先刷新当前播放列表详情
     await fetchPlaylistDetail();
+    // 然后刷新所有播放列表数据，确保首页数据同步
+    await playlistStore.fetchPlaylists();
   } catch (error) {
     console.error('添加歌曲失败:', error);
     message.error('添加歌曲失败');
@@ -332,16 +335,22 @@ const handleFilesAdded = async (tracks) => {
   if (tracks && tracks.length > 0) {
     showFileExplorer.value = false;
     message.success(`已添加 ${tracks.length} 首歌曲`);
+    // 先刷新当前播放列表详情
     await fetchPlaylistDetail();
+    // 然后刷新所有播放列表数据，确保首页数据同步
+    await playlistStore.fetchPlaylists();
   }
 };
 
 // 移除歌曲
 const handleRemoveTrack = async (track) => {
   try {
-    await playlistStore.removeTrackFromPlaylist(playlistId.value, track.id);
+    await playlistStore.removeTracksFromPlaylist(playlistId.value, [track.id]);
     message.success('已移除歌曲');
+    // 先刷新当前播放列表详情
     await fetchPlaylistDetail();
+    // 然后刷新所有播放列表数据，确保首页数据同步
+    await playlistStore.fetchPlaylists();
   } catch (error) {
     console.error('移除歌曲失败:', error);
     message.error('移除歌曲失败');
@@ -371,7 +380,10 @@ const handleModalOk = async () => {
     });
     
     message.success('更新成功');
+    // 先刷新当前播放列表详情
     await fetchPlaylistDetail();
+    // 然后刷新所有播放列表数据，确保首页数据同步
+    await playlistStore.fetchPlaylists();
     modalVisible.value = false;
   } catch (error) {
     console.error('更新播放列表失败:', error);
@@ -400,4 +412,24 @@ const formatDuration = (seconds) => {
 onMounted(() => {
   fetchPlaylistDetail();
 });
+
+// 当组件被激活时（从缓存中恢复），重新获取数据
+onActivated(() => {
+  fetchPlaylistDetail();
+});
+
+// 监听路由参数变化，当 playlistId 变化时重新获取播放列表详情
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId !== oldId) {
+    fetchPlaylistDetail();
+  }
+}, { immediate: true });
+
+// 监听 playlistStore.playlists 的变化，确保数据同步
+watch(() => playlistStore.playlists, () => {
+  // 当播放列表数据变化时，重新获取当前播放列表详情
+  if (playlistId.value) {
+    fetchPlaylistDetail();
+  }
+}, { deep: true });
 </script>

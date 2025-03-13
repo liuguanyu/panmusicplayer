@@ -635,7 +635,17 @@ const processAddToPlaylist = async (playlistId, filesToAdd) => {
     
     // 添加到播放列表
     if (tracks.length > 0) {
-      playlistStore.addTracksToPlaylist(playlistId, tracks);
+      // 先添加歌曲到播放列表
+      const updatedPlaylist = await playlistStore.addTracksToPlaylist(playlistId, tracks);
+      
+      // 添加成功后刷新所有播放列表数据，确保首页和详情页数据同步
+      await playlistStore.fetchPlaylists();
+      
+      // 如果需要，刷新当前播放列表详情
+      if (playlistId) {
+        await playlistStore.fetchPlaylistDetail(playlistId);
+      }
+      
       message.success({ content: `已添加 ${tracks.length} 首歌曲到播放列表`, key: loadingKey });
       emit('files-added', tracks);
     } else {

@@ -82,7 +82,7 @@
               <unordered-list-outlined class="text-5xl text-gray-500 dark:text-gray-400" />
             </div>
           </template>
-          <a-card-meta :title="playlist.name" :description="`${playlist.trackCount || 0}首歌曲`" />
+          <a-card-meta :title="playlist.name" :description="`${playlist.tracks?.length || 0}首歌曲`" />
         </a-card>
       </a-col>
     </a-row>
@@ -105,7 +105,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, h } from 'vue';
+import { ref, onMounted, h, computed, onActivated, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { 
@@ -124,8 +124,12 @@ const playlistStore = usePlaylistStore();
 
 // 状态
 const recentTracks = ref([]);
-const playlists = ref([]);
 const isLoading = ref(false);
+
+// 使用计算属性从 store 中获取播放列表数据
+const playlists = computed(() => {
+  return playlistStore.playlists.slice(0, 6); // 只显示前6个
+});
 
 // 导航方法
 const navigateTo = (path) => {
@@ -243,7 +247,7 @@ const fetchPlaylists = async () => {
   
   try {
     await playlistStore.fetchPlaylists();
-    playlists.value = playlistStore.playlists.slice(0, 6); // 只显示前6个
+    // 不需要手动更新 playlists，因为它是计算属性
   } catch (error) {
     console.error('获取播放列表失败:', error);
   } finally {
@@ -258,6 +262,19 @@ onMounted(async () => {
     fetchPlaylists()
   ]);
 });
+
+// 当组件被激活时（从缓存中恢复），重新获取数据
+onActivated(async () => {
+  await Promise.all([
+    fetchRecentTracks(),
+    fetchPlaylists()
+  ]);
+});
+
+// 监听 playlistStore.playlists 的变化，确保首页数据同步
+watch(() => playlistStore.playlists, () => {
+  // 不需要额外操作，因为 playlists 计算属性会自动更新
+}, { deep: true });
 
 // 创建播放列表的状态
 const playlistName = ref('');

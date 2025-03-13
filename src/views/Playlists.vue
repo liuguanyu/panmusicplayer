@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onActivated, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { 
@@ -86,7 +86,7 @@ const router = useRouter();
 const playlistStore = usePlaylistStore();
 
 // 状态
-const playlists = ref([]);
+const playlists = computed(() => playlistStore.playlists);
 const loading = ref(false);
 const modalVisible = ref(false);
 const modalLoading = ref(false);
@@ -104,7 +104,7 @@ const fetchPlaylists = async () => {
   loading.value = true;
   try {
     await playlistStore.fetchPlaylists();
-    playlists.value = playlistStore.playlists;
+    // 不需要手动赋值，因为playlists是计算属性
   } catch (error) {
     console.error('获取播放列表失败:', error);
     message.error('获取播放列表失败');
@@ -204,4 +204,15 @@ const formatDate = (timestamp) => {
 onMounted(() => {
   fetchPlaylists();
 });
+
+// 当组件被激活时（从缓存中恢复），重新获取数据
+onActivated(() => {
+  fetchPlaylists();
+});
+
+// 监听 playlistStore.playlists 的变化，确保数据同步
+watch(() => playlistStore.playlists, () => {
+  // 不需要额外操作，因为 playlists 是计算属性，会自动更新
+  // 但如果需要在数据变化时执行其他操作，可以在这里添加
+}, { deep: true });
 </script>

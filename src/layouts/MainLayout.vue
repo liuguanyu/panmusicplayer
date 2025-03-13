@@ -62,7 +62,7 @@
         </a>
             <template #overlay>
               <a-menu>
-                <a-menu-item key="settings" @click="navigateTo('/settings')">
+                <a-menu-item key="settings" @click="navigateTo('settings')">
                   <setting-outlined class="mr-2" />
                   <span>设置</span>
                 </a-menu-item>
@@ -178,7 +178,7 @@ const navigateTo = (path) => {
 const handleLogout = async () => {
   try {
     await userStore.logout();
-    router.push('/login');
+    router.push('login');
   } catch (error) {
     console.error('退出登录失败:', error);
   }
@@ -204,7 +204,7 @@ onMounted(async () => {
     console.log('用户信息:', userInfo.value);
     
     if (!isLoggedIn && route.path !== '/login') {
-      router.push('/login');
+      router.push('login');
     }
     
     // 如果已登录但没有用户信息，尝试手动获取
