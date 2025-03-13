@@ -175,11 +175,23 @@ export const useUserStore = defineStore('user', () => {
     try {
       // 验证token是否有效
       const isValid = await verifyToken();
+      console.log('Token验证结果:', isValid);
       
       if (isValid) {
-        // 获取用户信息
-        await fetchUserInfo();
-        return true;
+        try {
+          // 获取用户信息
+          await fetchUserInfo();
+          console.log('获取用户信息成功:', user.value);
+          return true;
+        } catch (userErr) {
+          console.error('获取用户信息失败:', userErr);
+          // 如果获取用户信息失败，尝试再次获取
+          setTimeout(() => {
+            fetchUserInfo().catch(e => console.error('重试获取用户信息失败:', e));
+          }, 1000);
+          // 即使获取用户信息失败，如果token有效，仍然认为用户已登录
+          return true;
+        }
       }
       
       return false;

@@ -29,31 +29,35 @@
     <a-layout>
       <!-- 头部 -->
       <a-layout-header class="bg-white dark:bg-dark px-4 flex items-center justify-between shadow-sm sticky top-0 z-9">
-        <div class="flex items-center">
-          <menu-unfold-outlined
-            v-if="collapsed"
-            class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
-            @click="() => (collapsed = !collapsed)"
-          />
-          <menu-fold-outlined
-            v-else
-            class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
-            @click="() => (collapsed = !collapsed)"
-          />
-          <div class="ml-2">
-            <a-breadcrumb>
-              <a-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="index">
-                {{ item.title }}
-              </a-breadcrumb-item>
-            </a-breadcrumb>
-          </div>
-        </div>
-        <div>
-          <a-dropdown>
-            <a class="flex items-center cursor-pointer hover:text-primary">
-              <a-avatar :size="32" class="mr-2">{{ userInfo?.username?.charAt(0) || 'U' }}</a-avatar>
-              <span>{{ userInfo?.username || '未登录' }}</span>
-            </a>
+    <div class="flex items-center">
+      <menu-unfold-outlined
+        v-if="collapsed"
+        class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
+        @click="() => (collapsed = !collapsed)"
+      />
+      <menu-fold-outlined
+        v-else
+        class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
+        @click="() => (collapsed = !collapsed)"
+      />
+      <div class="ml-2">
+        <a-breadcrumb>
+          <a-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="index">
+            {{ item.title }}
+          </a-breadcrumb-item>
+        </a-breadcrumb>
+      </div>
+    </div>
+    <div>
+      <a-dropdown>
+        <a class="flex items-center cursor-pointer hover:text-primary">
+          <a-avatar :size="32" class="mr-2" :src="userInfo?.avatarUrl">
+            {{ userInfo?.username?.charAt(0) || 'U' }}
+          </a-avatar>
+          <span v-if="userInfo?.username">{{ userInfo.username }}</span>
+          <span v-else>未登录</span>
+          <a-button size="small" class="ml-2" @click="handleRefreshUserInfo">刷新</a-button>
+        </a>
             <template #overlay>
               <a-menu>
                 <a-menu-item key="settings" @click="navigateTo('/settings')">
@@ -122,7 +126,7 @@ const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 
 // 从Store获取状态
-const { userInfo } = storeToRefs(userStore);
+const { userInfo, isLoggedIn } = storeToRefs(userStore);
 const { theme } = storeToRefs(settingsStore);
 
 // 侧边栏折叠状态
@@ -177,13 +181,34 @@ const handleLogout = async () => {
   }
 };
 
+// 刷新用户信息
+const handleRefreshUserInfo = async () => {
+  try {
+    console.log('手动刷新用户信息');
+    await userStore.fetchUserInfo();
+    console.log('刷新后的用户信息:', userInfo.value);
+  } catch (error) {
+    console.error('刷新用户信息失败:', error);
+  }
+};
+
 // 检查登录状态
 onMounted(async () => {
   try {
     // 检查是否已登录
     const isLoggedIn = await userStore.checkLoginStatus();
+    console.log('登录状态:', isLoggedIn);
+    console.log('用户信息:', userInfo.value);
+    
     if (!isLoggedIn && route.path !== '/login') {
       router.push('/login');
+    }
+    
+    // 如果已登录但没有用户信息，尝试手动获取
+    if (isLoggedIn && !userInfo.value) {
+      console.log('尝试手动获取用户信息');
+      await userStore.fetchUserInfo();
+      console.log('手动获取后的用户信息:', userInfo.value);
     }
   } catch (error) {
     console.error('检查登录状态失败:', error);

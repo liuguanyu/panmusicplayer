@@ -31928,24 +31928,37 @@ const verifyToken = async () => {
 };
 const getUserInfo = async (tokenObj) => {
   try {
+    console.log("开始获取用户信息");
     const token = tokenObj || await getValidToken();
+    console.log("获取到有效token:", token ? "成功" : "失败");
+    console.log("请求用户信息API:", `${config$1.apiBaseUrl}/xpan/nas?method=uinfo`);
     const response = await axios$1.get(`${config$1.apiBaseUrl}/xpan/nas`, {
       params: {
         method: "uinfo",
         access_token: token.access_token
+      },
+      headers: {
+        "User-Agent": "pan.baidu.com"
       }
     });
+    console.log("用户信息API响应:", response.data);
     if (response.data.errno !== 0) {
+      console.error("API返回错误:", response.data);
       throw new Error(`获取用户信息失败: ${response.data.errmsg}`);
     }
-    return {
+    if (!response.data.netdisk_name) {
+      console.warn("API响应中缺少netdisk_name字段，使用baidu_name作为备选");
+    }
+    const userInfo = {
       uk: response.data.uk,
       baiduid: response.data.baidu_name,
-      username: response.data.netdisk_name,
-      avatarUrl: response.data.avatar_url,
+      username: response.data.netdisk_name || response.data.baidu_name || "未知用户",
+      avatarUrl: response.data.avatar_url || "",
       vipType: response.data.vip_type,
       isVip: response.data.is_vip === 1
     };
+    console.log("解析后的用户信息:", userInfo);
+    return userInfo;
   } catch (error2) {
     console.error("获取用户信息失败:", error2);
     throw error2;
