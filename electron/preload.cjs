@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   
+  // 浏览云盘文件
+  browseCloudFiles: () => ipcRenderer.invoke('browse-cloud-files'),
+  
   // 百度云盘API相关
   baiduPan: {
     // 配置管理

@@ -352,3 +352,59 @@ ipcMain.handle('baidu-pan-get-lyric-content', async (event, fsId) => {
     return { success: false, error: error.message };
   }
 });
+
+// 浏览云盘文件
+ipcMain.handle('browse-cloud-files', async () => {
+  try {
+    // 验证配置是否存在
+    const config = await baiduPanService.loadConfig();
+    if (!config || !config.appKey || !config.secretKey) {
+      throw new Error('百度云盘配置不完整，请先在设置中完成配置');
+    }
+    
+    // 验证用户是否已登录
+    const isLoggedIn = await baiduPanService.verifyToken();
+    if (!isLoggedIn) {
+      throw new Error('您尚未登录百度云盘，请先在设置中登录');
+    }
+    
+    // 获取根目录下的音频文件
+    const result = await baiduPanService.getAudioFileList('/');
+    
+    if (!result || !result.list) {
+      return [];
+    }
+    
+    // 处理文件列表，为每个文件获取下载链接
+    const files = [];
+    for (const file of result.list) {
+      try {
+        const downloadLink = await baiduPanService.getFileDownloadLink(file.fs_id);
+        
+        files.push({
+          id: file.fs_id,
+          title: file.server_filename.replace(/\.[^/.]+$/, ''), // 移除扩展名
+          artist: '', // 可以尝试从文件名解析
+          album: '',
+          duration: 0, // 实际播放时会更新
+          path: downloadLink,
+          cover: '',
+          lrc: '',
+          source: 'baiducloud',
+          sourceData: {
+            fs_id: file.fs_id,
+            path: file.path
+          }
+        });
+      } catch (fileError) {
+        console.error(`处理文件 ${file.server_filename} 失败:`, fileError);
+      }
+    }
+    
+    return files;
+  } catch (error) {
+    console.error('浏览云盘文件失败:', error);
+    // 将错误传递给渲染进程，而不是返回空数组
+    throw error;
+  }
+});

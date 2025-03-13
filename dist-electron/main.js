@@ -32083,7 +32083,7 @@ const getFileList = async (path2 = "/", options = {}) => {
     if (response.data.errno !== 0) {
       throw new Error(`获取文件列表失败: ${response.data.errmsg}`);
     }
-    return response.data.list || [];
+    return response.data;
   } catch (error2) {
     console.error("获取文件列表失败:", error2);
     throw error2;
@@ -32091,11 +32091,15 @@ const getFileList = async (path2 = "/", options = {}) => {
 };
 const getAudioFileList = async (path2 = "/", options = {}) => {
   try {
-    const fileList = await getFileList(path2, options);
-    return fileList.filter((file) => {
+    const response = await getFileList(path2, options);
+    if (!response.list) {
+      return { ...response, list: [] };
+    }
+    const audioFiles = response.list.filter((file) => {
       const ext = file.server_filename.split(".").pop().toLowerCase();
       return ["mp3", "flac", "wav", "aac", "m4a", "ogg"].includes(ext);
     });
+    return { ...response, list: audioFiles };
   } catch (error2) {
     console.error("获取音频文件列表失败:", error2);
     throw error2;
@@ -32160,7 +32164,7 @@ const searchFiles = async (keyword2, path2 = "/", options = {}) => {
     if (response.data.errno !== 0) {
       throw new Error(`搜索文件失败: ${response.data.errmsg}`);
     }
-    return response.data.list || [];
+    return response.data;
   } catch (error2) {
     console.error("搜索文件失败:", error2);
     throw error2;
@@ -32168,11 +32172,15 @@ const searchFiles = async (keyword2, path2 = "/", options = {}) => {
 };
 const searchAudioFiles = async (keyword2, path2 = "/", options = {}) => {
   try {
-    const fileList = await searchFiles(keyword2, path2, options);
-    return fileList.filter((file) => {
+    const response = await searchFiles(keyword2, path2, options);
+    if (!response.list) {
+      return { ...response, list: [] };
+    }
+    const audioFiles = response.list.filter((file) => {
       const ext = file.server_filename.split(".").pop().toLowerCase();
       return ["mp3", "flac", "wav", "aac", "m4a", "ogg"].includes(ext);
     });
+    return { ...response, list: audioFiles };
   } catch (error2) {
     console.error("搜索音频文件失败:", error2);
     throw error2;
@@ -32183,8 +32191,11 @@ const getLyricFile = async (audioFile) => {
     const audioFileName = audioFile.server_filename;
     const lrcFileName = audioFileName.substring(0, audioFileName.lastIndexOf(".")) + ".lrc";
     const path2 = audioFile.path.substring(0, audioFile.path.lastIndexOf("/") + 1);
-    const fileList = await getFileList(path2);
-    const lrcFile = fileList.find((file) => file.server_filename === lrcFileName);
+    const response = await getFileList(path2);
+    if (!response.list) {
+      return null;
+    }
+    const lrcFile = response.list.find((file) => file.server_filename === lrcFileName);
     return lrcFile || null;
   } catch (error2) {
     console.error("获取歌词文件失败:", error2);
@@ -43022,6 +43033,52 @@ ipcMain.handle("baidu-pan-get-lyric-content", async (event, fsId) => {
   } catch (error2) {
     console.error("获取百度云盘歌词内容失败:", error2);
     return { success: false, error: error2.message };
+  }
+});
+ipcMain.handle("browse-cloud-files", async () => {
+  try {
+    const config2 = await baiduPanService.loadConfig();
+    if (!config2 || !config2.appKey || !config2.secretKey) {
+      throw new Error("百度云盘配置不完整，请先在设置中完成配置");
+    }
+    const isLoggedIn = await baiduPanService.verifyToken();
+    if (!isLoggedIn) {
+      throw new Error("您尚未登录百度云盘，请先在设置中登录");
+    }
+    const result = await baiduPanService.getAudioFileList("/");
+    if (!result || !result.list) {
+      return [];
+    }
+    const files = [];
+    for (const file of result.list) {
+      try {
+        const downloadLink = await baiduPanService.getFileDownloadLink(file.fs_id);
+        files.push({
+          id: file.fs_id,
+          title: file.server_filename.replace(/\.[^/.]+$/, ""),
+          // 移除扩展名
+          artist: "",
+          // 可以尝试从文件名解析
+          album: "",
+          duration: 0,
+          // 实际播放时会更新
+          path: downloadLink,
+          cover: "",
+          lrc: "",
+          source: "baiducloud",
+          sourceData: {
+            fs_id: file.fs_id,
+            path: file.path
+          }
+        });
+      } catch (fileError) {
+        console.error(`处理文件 ${file.server_filename} 失败:`, fileError);
+      }
+    }
+    return files;
+  } catch (error2) {
+    console.error("浏览云盘文件失败:", error2);
+    throw error2;
   }
 });
 export {
