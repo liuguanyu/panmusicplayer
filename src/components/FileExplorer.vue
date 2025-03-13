@@ -77,6 +77,7 @@
         :rowKey="record => record.fs_id"
         size="middle"
         @row-click="handleRowClick"
+        :customRow="customRowEvents"
         :class="tableRowClass"
       >
         <!-- 名称列 -->
@@ -156,6 +157,56 @@
         </a-button>
       </div>
     </div>
+    
+    <!-- 播放列表选择/创建模态框 -->
+    <a-modal
+      v-model:visible="showPlaylistModal"
+      :title="playlistModalMode === 'select' ? '选择播放列表' : '创建新播放列表'"
+      @ok="handlePlaylistModalOk"
+      @cancel="handlePlaylistModalCancel"
+      :okText="playlistModalMode === 'select' ? '确定' : '创建'"
+      cancelText="取消"
+      :maskClosable="false"
+    >
+      <template v-if="playlistModalMode === 'select'">
+        <div class="mb-4">
+          <p class="mb-2">请选择要添加到的播放列表：</p>
+          <a-radio-group v-model:value="selectedPlaylistId" class="w-full">
+            <div class="flex flex-col gap-2">
+              <a-radio 
+                v-for="playlist in playlistStore.playlists" 
+                :key="playlist.id" 
+                :value="playlist.id"
+                class="w-full p-2 border rounded hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                {{ playlist.name }}
+              </a-radio>
+            </div>
+          </a-radio-group>
+        </div>
+        <div class="flex justify-end">
+          <a-button type="link" @click="switchToCreateMode">
+            创建新播放列表
+          </a-button>
+        </div>
+      </template>
+      
+      <template v-else>
+        <a-form layout="vertical">
+          <a-form-item label="播放列表名称" required>
+            <a-input v-model:value="newPlaylistName" placeholder="请输入播放列表名称" />
+          </a-form-item>
+          <a-form-item label="描述">
+            <a-textarea v-model:value="newPlaylistDescription" placeholder="请输入描述（可选）" :rows="3" />
+          </a-form-item>
+        </a-form>
+        <div class="flex justify-end">
+          <a-button type="link" @click="switchToSelectMode">
+            选择已有播放列表
+          </a-button>
+        </div>
+      </template>
+    </a-modal>
   </div>
 </template>
 
@@ -207,6 +258,12 @@ const currentPath = ref(props.initialPath);
 const files = ref([]);
 const selectedKeys = ref([]);
 const searchQuery = ref('');
+const showPlaylistModal = ref(false);
+const newPlaylistName = ref('');
+const newPlaylistDescription = ref('');
+const filesToAddToPlaylist = ref([]);
+const playlistModalMode = ref('select'); // 'select' 或 'create'
+const selectedPlaylistId = ref('');
 
 // 支持的音频格式
 const audioExtensions = ['mp3', 'wav', 'flac', 'ogg', 'm4a', 'ra'];
@@ -260,10 +317,16 @@ const pathSegments = computed(() => {
 
 // 过滤文件列表
 const filteredFiles = computed(() => {
-  if (!searchQuery.value) return files.value;
+  // 首先过滤掉不支持的文件（非文件夹且非音频文件）
+  const supportedFiles = files.value.filter(file => 
+    file.isdir || isAudioFile(file)
+  );
+  
+  // 然后应用搜索过滤
+  if (!searchQuery.value) return supportedFiles;
   
   const query = searchQuery.value.toLowerCase();
-  return files.value.filter(file => 
+  return supportedFiles.filter(file => 
     file.server_filename.toLowerCase().includes(query)
   );
 });
@@ -366,8 +429,44 @@ const handleSearch = () => {
 
 // 处理行点击
 const handleRowClick = (record) => {
+  // 单击不再自动打开文件夹，只选中行
+};
+
+// 自定义行事件
+const customRowEvents = (record) => {
+  return {
+    onClick: () => {
+      // 单击事件已由 @row-click 处理
+    },
+    onDblclick: () => {
+      // 双击事件处理
+      if (record.isdir) {
+        // 双击文件夹打开
+        navigateTo(currentPath.value + record.server_filename + '/');
+      } else if (isAudioFile(record)) {
+        // 双击音频文件选中
+        const index = selectedKeys.value.indexOf(record.fs_id);
+        if (index === -1) {
+          // 如果未选中，则选中
+          selectedKeys.value = [record.fs_id];
+        }
+      }
+    }
+  };
+};
+
+// 处理行双击 (保留此函数以兼容可能的其他调用)
+const handleRowDblClick = (record) => {
   if (record.isdir) {
+    // 双击文件夹打开
     navigateTo(currentPath.value + record.server_filename + '/');
+  } else if (isAudioFile(record)) {
+    // 双击音频文件选中
+    const index = selectedKeys.value.indexOf(record.fs_id);
+    if (index === -1) {
+      // 如果未选中，则选中
+      selectedKeys.value = [record.fs_id];
+    }
   }
 };
 
@@ -385,6 +484,62 @@ const addSelectedToPlaylist = () => {
   addToPlaylist(selectedFiles);
 };
 
+// 切换到创建模式
+const switchToCreateMode = () => {
+  playlistModalMode.value = 'create';
+  newPlaylistName.value = '';
+  newPlaylistDescription.value = '';
+};
+
+// 切换到选择模式
+const switchToSelectMode = () => {
+  playlistModalMode.value = 'select';
+  if (playlistStore.playlists.length > 0) {
+    selectedPlaylistId.value = playlistStore.playlists[0].id;
+  }
+};
+
+// 处理播放列表模态框确认
+const handlePlaylistModalOk = async () => {
+  if (playlistModalMode.value === 'select') {
+    if (!selectedPlaylistId.value) {
+      message.error('请选择一个播放列表');
+      return;
+    }
+    
+    // 使用选中的播放列表ID添加文件
+    await processAddToPlaylist(selectedPlaylistId.value, filesToAddToPlaylist.value);
+    showPlaylistModal.value = false;
+  } else {
+    // 创建新播放列表
+    if (!newPlaylistName.value.trim()) {
+      message.error('请输入播放列表名称');
+      return;
+    }
+    
+    try {
+      // 创建新播放列表
+      const newPlaylistId = await playlistStore.createPlaylist({
+        name: newPlaylistName.value.trim(),
+        description: newPlaylistDescription.value.trim()
+      });
+      
+      // 使用新创建的播放列表ID添加文件
+      await processAddToPlaylist(newPlaylistId, filesToAddToPlaylist.value);
+      showPlaylistModal.value = false;
+    } catch (error) {
+      console.error('创建播放列表失败:', error);
+      message.error('创建播放列表失败');
+    }
+  }
+};
+
+// 处理播放列表模态框取消
+const handlePlaylistModalCancel = () => {
+  showPlaylistModal.value = false;
+  filesToAddToPlaylist.value = [];
+};
+
 // 添加文件到播放列表
 const addToPlaylist = async (filesToAdd) => {
   if (!filesToAdd.length) return;
@@ -393,10 +548,39 @@ const addToPlaylist = async (filesToAdd) => {
     const playlistId = props.playlistId || playlistStore.currentPlaylist?.id;
     
     if (!playlistId) {
-      message.error('请先选择一个播放列表');
+      // 没有选中播放列表，显示播放列表选择/创建模态框
+      filesToAddToPlaylist.value = filesToAdd;
+      
+      // 显示提示信息
+      message.info('请选择一个播放列表或创建新的播放列表');
+      
+      // 初始化模态框状态
+      if (playlistStore.playlists.length > 0) {
+        playlistModalMode.value = 'select';
+        selectedPlaylistId.value = playlistStore.playlists[0].id;
+      } else {
+        playlistModalMode.value = 'create';
+        newPlaylistName.value = '';
+        newPlaylistDescription.value = '';
+      }
+      
+      showPlaylistModal.value = true;
       return;
     }
     
+    // 有选中的播放列表，直接添加
+    await processAddToPlaylist(playlistId, filesToAdd);
+  } catch (error) {
+    console.error('添加到播放列表失败:', error);
+    message.error('添加到播放列表失败');
+  }
+};
+
+// 处理添加文件到播放列表的核心逻辑
+const processAddToPlaylist = async (playlistId, filesToAdd) => {
+  if (!filesToAdd.length || !playlistId) return;
+  
+  try {
     // 显示加载状态
     const loadingKey = `adding_${Date.now()}`;
     message.loading({ content: '正在添加到播放列表...', key: loadingKey, duration: 0 });
