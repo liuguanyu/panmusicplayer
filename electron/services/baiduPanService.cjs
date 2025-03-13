@@ -44,8 +44,8 @@ const createApiClient = (token) => {
     baseURL: config.apiBaseUrl,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'pan.baidu.com',
-    },
+      'User-Agent': 'pan.baidu.com'
+    }
   });
 
   // 请求拦截器，添加通用参数和签名
@@ -57,7 +57,7 @@ const createApiClient = (token) => {
       device_id: config.deviceId,
       device_name: config.deviceName,
       timestamp: Math.floor(Date.now() / 1000),
-      version: '1.0.0',
+      version: '1.0.0'
     };
 
     // 添加签名
@@ -77,10 +77,10 @@ const getFileList = async (path = '/', options = {}) => {
     if (!config) {
       await initialize();
     }
-    
+
     const token = await authService.getValidToken();
     const client = createApiClient(token);
-    
+
     const params = {
       method: 'list',
       dir: path,
@@ -88,7 +88,7 @@ const getFileList = async (path = '/', options = {}) => {
       desc: options.desc ? 1 : 0,
       limit: options.limit || 1000,
       start: options.start || 0,
-      web: 1, // 返回更多信息
+      web: 1 // 返回更多信息
     };
 
     const response = await client.get('/xpan/file', { params });
@@ -108,7 +108,7 @@ const getFileList = async (path = '/', options = {}) => {
 const getAudioFileList = async (path = '/', options = {}) => {
   try {
     const fileList = await getFileList(path, options);
-    
+
     // 过滤音频文件
     return fileList.filter(file => {
       const ext = file.server_filename.split('.').pop().toLowerCase();
@@ -127,14 +127,14 @@ const getFileDownloadLink = async (fsId) => {
     if (!config) {
       await initialize();
     }
-    
+
     const token = await authService.getValidToken();
     const client = createApiClient(token);
-    
+
     const params = {
       method: 'filemetas',
       fsids: `[${fsId}]`,
-      dlink: 1,
+      dlink: 1
     };
 
     const response = await client.get('/xpan/multimedia', { params });
@@ -148,17 +148,17 @@ const getFileDownloadLink = async (fsId) => {
     }
 
     const file = response.data.list[0];
-    
+
     // 获取实际下载链接
     const dlinkResponse = await axios.get(file.dlink, {
       headers: {
-        'User-Agent': 'pan.baidu.com',
+        'User-Agent': 'pan.baidu.com'
       },
       params: {
-        access_token: token.access_token,
+        access_token: token.access_token
       },
       maxRedirects: 0,
-      validateStatus: status => status >= 200 && status < 400,
+      validateStatus: status => status >= 200 && status < 400
     });
 
     // 如果是重定向，返回重定向地址
@@ -180,17 +180,17 @@ const searchFiles = async (keyword, path = '/', options = {}) => {
     if (!config) {
       await initialize();
     }
-    
+
     const token = await authService.getValidToken();
     const client = createApiClient(token);
-    
+
     const params = {
       method: 'search',
       key: keyword,
       dir: path,
       recursion: options.recursion ? 1 : 0,
       limit: options.limit || 1000,
-      web: 1, // 返回更多信息
+      web: 1 // 返回更多信息
     };
 
     const response = await client.get('/xpan/file', { params });
@@ -210,7 +210,7 @@ const searchFiles = async (keyword, path = '/', options = {}) => {
 const searchAudioFiles = async (keyword, path = '/', options = {}) => {
   try {
     const fileList = await searchFiles(keyword, path, options);
-    
+
     // 过滤音频文件
     return fileList.filter(file => {
       const ext = file.server_filename.split('.').pop().toLowerCase();
@@ -228,14 +228,14 @@ const getLyricFile = async (audioFile) => {
     // 从音频文件名推断歌词文件名
     const audioFileName = audioFile.server_filename;
     const lrcFileName = audioFileName.substring(0, audioFileName.lastIndexOf('.')) + '.lrc';
-    
+
     // 在同一目录下搜索歌词文件
     const path = audioFile.path.substring(0, audioFile.path.lastIndexOf('/') + 1);
     const fileList = await getFileList(path);
-    
+
     // 查找匹配的歌词文件
     const lrcFile = fileList.find(file => file.server_filename === lrcFileName);
-    
+
     return lrcFile || null;
   } catch (error) {
     console.error('获取歌词文件失败:', error);
@@ -249,17 +249,17 @@ const getLyricContent = async (lrcFile) => {
     if (!lrcFile) {
       return null;
     }
-    
+
     // 获取歌词文件下载链接
     const downloadLink = await getFileDownloadLink(lrcFile.fs_id);
-    
+
     // 下载歌词内容
     const response = await axios.get(downloadLink, {
       headers: {
-        'User-Agent': 'pan.baidu.com',
-      },
+        'User-Agent': 'pan.baidu.com'
+      }
     });
-    
+
     return response.data;
   } catch (error) {
     console.error('获取歌词内容失败:', error);
@@ -287,7 +287,7 @@ module.exports = {
   logout: authService.logout,
   verifyToken: authService.verifyToken,
   getUserInfo: authService.getUserInfo,
-  
+
   // 本地实现的文件操作函数
   getFileList,
   getAudioFileList,
@@ -295,5 +295,5 @@ module.exports = {
   searchFiles,
   searchAudioFiles,
   getLyricFile,
-  getLyricContent,
+  getLyricContent
 };

@@ -12,7 +12,7 @@ import require$$4$1 from "https";
 import require$$0$4 from "url";
 import require$$1$4 from "tty";
 import require$$8 from "zlib";
-import require$$2 from "querystring";
+import "querystring";
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
 var main = {};
 var source = { exports: {} };
@@ -31578,16 +31578,13 @@ function requireBaiduPanConfig() {
     // 设备名称
     apiBaseUrl: "https://pan.baidu.com/rest/2.0",
     // API基础URL
-    oauthUrl: "https://openapi.baidu.com/oauth/2.0",
+    oauthUrl: "https://openapi.baidu.com/oauth/2.0"
     // OAuth URL
-    shareThirdld: "0"
-    // 分享第三方ID
   };
   return baiduPanConfig;
 }
 const axios$1 = axios_1;
 const crypto$1 = require$$1$2;
-const querystring = require$$2;
 const { app: app$1 } = require$$1$3;
 const { join: join$1 } = require$$0$2;
 const fs = require$$0$1;
@@ -31672,17 +31669,17 @@ const clearToken = async () => {
 };
 const refreshToken = async (token) => {
   try {
-    const response = await axios$1.post(
+    const response = await axios$1.get(
       `${config$1.oauthUrl}/token`,
-      querystring.stringify({
-        grant_type: "refresh_token",
-        refresh_token: token.refresh_token,
-        client_id: config$1.appKey,
-        client_secret: config$1.secretKey
-      }),
       {
+        params: {
+          grant_type: "refresh_token",
+          refresh_token: token.refresh_token,
+          client_id: config$1.appKey,
+          client_secret: config$1.secretKey
+        },
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "User-Agent": "pan.baidu.com"
         }
       }
     );
@@ -31751,21 +31748,43 @@ const getAuthCode = async () => {
     throw error2;
   }
 };
+let lastPollTime = 0;
+const DEFAULT_POLL_INTERVAL = 5;
 const checkAuthCodeStatus = async (authCode) => {
+  console.log("检查授权码状态:", authCode);
   try {
     await loadConfig();
     const deviceCode = typeof authCode === "string" ? authCode : authCode.device_code;
-    const response = await axios$1.get(`${config$1.oauthUrl}/token`, {
-      params: {
-        grant_type: "device_token",
-        code: deviceCode,
-        client_id: config$1.appKey,
-        client_secret: config$1.secretKey
-      },
-      headers: {
-        "User-Agent": "pan.baidu.com"
-      }
+    const interval = typeof authCode === "object" && authCode.interval ? authCode.interval : DEFAULT_POLL_INTERVAL;
+    const now = Date.now();
+    const timeSinceLastPoll = (now - lastPollTime) / 1e3;
+    if (timeSinceLastPoll < interval) {
+      console.log(`轮询间隔过短，等待${interval - timeSinceLastPoll}秒后重试`);
+      return { status: "WAITING", message: "等待轮询间隔" };
+    }
+    lastPollTime = now;
+    console.log("发送请求到:", `${config$1.oauthUrl}/token`);
+    console.log("请求参数:", {
+      grant_type: "device_token",
+      code: deviceCode,
+      client_id: config$1.appKey,
+      client_secret: config$1.secretKey
     });
+    const response = await axios$1.get(
+      `${config$1.oauthUrl}/token`,
+      {
+        params: {
+          grant_type: "device_token",
+          code: deviceCode,
+          client_id: config$1.appKey,
+          client_secret: config$1.secretKey
+        },
+        headers: {
+          "User-Agent": "pan.baidu.com",
+          "Accept": "application/json"
+        }
+      }
+    );
     if (response.data.access_token) {
       const token = {
         access_token: response.data.access_token,
@@ -31777,9 +31796,9 @@ const checkAuthCodeStatus = async (authCode) => {
       await saveToken(token);
       return {
         status: "CONFIRMED",
-        // 只返回必要的信息
+        // 只返回必要的信息，不截取access_token，避免可能的问题
         tokenInfo: {
-          access_token: response.data.access_token.substring(0, 10) + "...",
+          access_token: response.data.access_token,
           expires_in: response.data.expires_in,
           scope: response.data.scope
         }
@@ -31806,6 +31825,12 @@ const checkAuthCodeStatus = async (authCode) => {
           suggestedInterval: error2.response.data.interval || 10
         };
       }
+      if (errorData.error === "invalid_grant" || errorData.error === "invalid_request") {
+        return { status: "INVALID", message: "无效的授权码，请重新获取" };
+      }
+      if (errorData.error === "access_denied") {
+        return { status: "REVOKED", message: "授权码已被撤销，请重新获取" };
+      }
       return {
         status: "ERROR",
         message: errorData.error_description || errorData.error || "未知错误"
@@ -31816,11 +31841,20 @@ const checkAuthCodeStatus = async (authCode) => {
   }
 };
 const loginWithAuthCode = async (authCode) => {
+  console.log("使用授权码登录:", authCode);
   try {
     const deviceCode = typeof authCode === "string" ? authCode : authCode.device_code;
-    const status = await checkAuthCodeStatus(deviceCode);
+    const interval = typeof authCode === "object" && authCode.interval ? authCode.interval : DEFAULT_POLL_INTERVAL;
+    const status = await checkAuthCodeStatus({
+      device_code: deviceCode,
+      interval
+    });
+    console.log("授权码状态:", status);
+    if (status.status === "WAITING" || status.status === "SLOW_DOWN") {
+      return status;
+    }
     if (status.status !== "CONFIRMED") {
-      throw new Error("授权码未确认");
+      throw new Error(`授权码未确认: ${status.message || status.status}`);
     }
     const token = await loadToken();
     if (!token) {
@@ -31829,8 +31863,8 @@ const loginWithAuthCode = async (authCode) => {
     const userInfo = await getUserInfo(token);
     return {
       token: {
-        // 只返回必要的信息，避免序列化问题
-        access_token: token.access_token.substring(0, 10) + "...",
+        // 只返回必要的信息，不截取access_token，避免可能的问题
+        access_token: token.access_token,
         expires_in: token.expires_in,
         scope: token.scope
       },

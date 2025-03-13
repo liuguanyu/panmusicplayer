@@ -1,8 +1,8 @@
 /**
- * 百度云盘API配置示例文件
- * 
+ * API配置示例文件
+ *
  * 使用方法：
- * 1. 复制此文件为 baiduPanConfig.js
+ * 1. 复制此文件为 baiduPanConfig.cjs
  * 2. 填入你的百度云盘开发者应用信息
  * 3. 保存文件
  */
@@ -17,5 +17,5 @@ module.exports = {
   deviceId: '', // 设备ID，可以是随机生成的UUID，留空将自动生成
   deviceName: '度盘读天下', // 设备名称
   apiBaseUrl: 'https://pan.baidu.com/rest/2.0', // API基础URL
-  oauthUrl: 'https://openapi.baidu.com/oauth/2.0', // OAuth URL
+  oauthUrl: 'https://openapi.baidu.com/oauth/2.0' // OAuth URL
 };

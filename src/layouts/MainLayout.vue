@@ -51,8 +51,8 @@
         <div>
           <a-dropdown>
             <a class="flex items-center cursor-pointer hover:text-primary">
-              <a-avatar :size="32" class="mr-2">{{ userInfo?.nickname?.charAt(0) || 'U' }}</a-avatar>
-              <span>{{ userInfo?.nickname || '未登录' }}</span>
+              <a-avatar :size="32" class="mr-2">{{ userInfo?.username?.charAt(0) || 'U' }}</a-avatar>
+              <span>{{ userInfo?.username || '未登录' }}</span>
             </a>
             <template #overlay>
               <a-menu>

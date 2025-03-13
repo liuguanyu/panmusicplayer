@@ -106,17 +106,17 @@ const clearToken = async () => {
 // 刷新令牌
 const refreshToken = async (token) => {
   try {
-    const response = await axios.post(
+    const response = await axios.get(
       `${config.oauthUrl}/token`,
-      querystring.stringify({
-        grant_type: 'refresh_token',
-        refresh_token: token.refresh_token,
-        client_id: config.appKey,
-        client_secret: config.secretKey,
-      }),
       {
+        params: {
+          grant_type: 'refresh_token',
+          refresh_token: token.refresh_token,
+          client_id: config.appKey,
+          client_secret: config.secretKey,
+        },
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'pan.baidu.com',
         },
       }
     );
@@ -203,25 +203,57 @@ const getAuthCode = async () => {
   }
 };
 
+// 上次轮询时间
+let lastPollTime = 0;
+// 默认轮询间隔（秒）
+const DEFAULT_POLL_INTERVAL = 5;
+
 // 检查授权码状态
 const checkAuthCodeStatus = async (authCode) => {
+  console.log('检查授权码状态:', authCode);
   try {
     await loadConfig();
     
     // 支持传入完整的授权码对象或仅设备码字符串
     const deviceCode = typeof authCode === 'string' ? authCode : authCode.device_code;
+    const interval = (typeof authCode === 'object' && authCode.interval) ? authCode.interval : DEFAULT_POLL_INTERVAL;
     
-    const response = await axios.get(`${config.oauthUrl}/token`, {
-      params: {
-        grant_type: 'device_token',
-        code: deviceCode,
-        client_id: config.appKey,
-        client_secret: config.secretKey,
-      },
-      headers: {
-        'User-Agent': 'pan.baidu.com',
-      },
+    // 确保轮询间隔符合要求（至少5秒）
+    const now = Date.now();
+    const timeSinceLastPoll = (now - lastPollTime) / 1000;
+    
+    if (timeSinceLastPoll < interval) {
+      console.log(`轮询间隔过短，等待${interval - timeSinceLastPoll}秒后重试`);
+      return { status: 'WAITING', message: '等待轮询间隔' };
+    }
+    
+    // 更新轮询时间
+    lastPollTime = now;
+    
+    console.log('发送请求到:', `${config.oauthUrl}/token`);
+    console.log('请求参数:', {
+      grant_type: 'device_token',
+      code: deviceCode,
+      client_id: config.appKey,
+      client_secret: config.secretKey,
     });
+    
+    // 使用GET方法，与百度API文档保持一致
+    const response = await axios.get(
+      `${config.oauthUrl}/token`,
+      {
+        params: {
+          grant_type: 'device_token',
+          code: deviceCode,
+          client_id: config.appKey,
+          client_secret: config.secretKey,
+        },
+        headers: {
+          'User-Agent': 'pan.baidu.com',
+          'Accept': 'application/json',
+        },
+      }
+    );
 
     // 如果成功获取到token，表示用户已授权
     if (response.data.access_token) {
@@ -240,9 +272,9 @@ const checkAuthCodeStatus = async (authCode) => {
       // 返回状态，但不包含完整token对象，避免序列化问题
       return {
         status: 'CONFIRMED',
-        // 只返回必要的信息
+        // 只返回必要的信息，不截取access_token，避免可能的问题
         tokenInfo: {
-          access_token: response.data.access_token.substring(0, 10) + '...',
+          access_token: response.data.access_token,
           expires_in: response.data.expires_in,
           scope: response.data.scope,
         }
@@ -279,6 +311,16 @@ const checkAuthCodeStatus = async (authCode) => {
           suggestedInterval: (error.response.data.interval || 10)
         };
       }
+      
+      // 无效的授权码
+      if (errorData.error === 'invalid_grant' || errorData.error === 'invalid_request') {
+        return { status: 'INVALID', message: '无效的授权码，请重新获取' };
+      }
+      
+      // 授权码已被撤销
+      if (errorData.error === 'access_denied') {
+        return { status: 'REVOKED', message: '授权码已被撤销，请重新获取' };
+      }
 
       // 其他错误
       return { 
@@ -294,15 +336,28 @@ const checkAuthCodeStatus = async (authCode) => {
 
 // 使用授权码登录
 const loginWithAuthCode = async (authCode) => {
+  console.log('使用授权码登录:', authCode);
   try {
     // 支持传入完整的授权码对象或仅设备码字符串
     const deviceCode = typeof authCode === 'string' ? authCode : authCode.device_code;
+    const interval = (typeof authCode === 'object' && authCode.interval) ? authCode.interval : DEFAULT_POLL_INTERVAL;
     
     // 检查授权码状态
-    const status = await checkAuthCodeStatus(deviceCode);
+    const status = await checkAuthCodeStatus({
+      device_code: deviceCode,
+      interval: interval
+    });
+
+    console.log('授权码状态:', status);
     
+    // 如果状态是WAITING或SLOW_DOWN，则返回状态，让调用者继续轮询
+    if (status.status === 'WAITING' || status.status === 'SLOW_DOWN') {
+      return status;
+    }
+    
+    // 如果状态不是CONFIRMED，则抛出错误
     if (status.status !== 'CONFIRMED') {
-      throw new Error('授权码未确认');
+      throw new Error(`授权码未确认: ${status.message || status.status}`);
     }
 
     // 令牌已经在checkAuthCodeStatus中保存，直接加载
@@ -316,8 +371,8 @@ const loginWithAuthCode = async (authCode) => {
     
     return {
       token: {
-        // 只返回必要的信息，避免序列化问题
-        access_token: token.access_token.substring(0, 10) + '...',
+        // 只返回必要的信息，不截取access_token，避免可能的问题
+        access_token: token.access_token,
         expires_in: token.expires_in,
         scope: token.scope,
       },
