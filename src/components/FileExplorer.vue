@@ -117,7 +117,7 @@
               </a-button>
               
               <a-button 
-                v-else-if="isAudioFile(record)" 
+                v-else-if="isAudioFile(record) && props.showAddToPlaylistButton" 
                 type="text" 
                 size="small"
                 @click.stop="addToPlaylist([record])"
@@ -145,7 +145,7 @@
         已选择 {{ selectedKeys.length }} 个文件
       </div>
       
-      <div class="actions">
+      <div class="actions" v-if="props.showAddToPlaylistButton">
         <a-button 
           type="primary" 
           :disabled="!hasSelectedAudioFiles"
@@ -186,11 +186,15 @@ const props = defineProps({
   playlistId: {
     type: String,
     default: ''
+  },
+  showAddToPlaylistButton: {
+    type: Boolean,
+    default: false
   }
 });
 
 // 定义emit
-const emit = defineEmits(['filesAdded']);
+const emit = defineEmits(['files-added']);
 
 // 获取store
 const userStore = useUserStore();
@@ -449,7 +453,7 @@ const addToPlaylist = async (filesToAdd) => {
     if (tracks.length > 0) {
       playlistStore.addTracksToPlaylist(playlistId, tracks);
       message.success({ content: `已添加 ${tracks.length} 首歌曲到播放列表`, key: loadingKey });
-      emit('filesAdded', tracks);
+      emit('files-added', tracks);
     } else {
       message.error({ content: '没有成功添加任何歌曲', key: loadingKey });
     }
@@ -462,7 +466,3 @@ const addToPlaylist = async (filesToAdd) => {
   }
 };
 </script>
-
-<style scoped>
-/* 可以添加一些自定义样式 */
-</style>
