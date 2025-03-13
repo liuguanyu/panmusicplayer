@@ -1,21 +1,23 @@
 <template>
-  <a-layout class="h-screen">
+  <a-layout class="h-screen dark:bg-dark">
     <!-- 侧边栏 -->
     <a-layout-sider
       v-model:collapsed="collapsed"
       :trigger="null"
       collapsible
-      class="overflow-auto h-screen fixed left-0 top-0 bottom-0 z-10"
+      class="overflow-auto h-screen dark:bg-dark"
       :theme="theme === 'dark' ? 'dark' : 'light'"
+      :class="{'dark:bg-[#141414]': theme === 'dark'}"
     >
       <div class="h-16 p-4 flex items-center overflow-hidden">
         <img src="@/assets/vue.svg" alt="百度云音乐" class="h-8 w-8 mr-2" />
-        <h1 v-if="!collapsed" class="text-lg m-0 whitespace-nowrap">百度云音乐</h1>
+        <h1 v-if="!collapsed" class="text-lg m-0 whitespace-nowrap dark:text-white">百度云音乐</h1>
       </div>
       <a-menu
         v-model:selectedKeys="selectedKeys"
         :theme="theme === 'dark' ? 'dark' : 'light'"
         mode="inline"
+        class="dark:bg-[#141414]"
       >
         <a-menu-item v-for="route in menuRoutes" :key="route.name" @click="() => navigateTo(route.path)">
           <template #icon>
@@ -28,21 +30,21 @@
 
     <a-layout>
       <!-- 头部 -->
-      <a-layout-header class="bg-white dark:bg-dark px-4 flex items-center justify-between shadow-sm sticky top-0 z-9">
+      <a-layout-header class="bg-white dark:bg-[#141414] px-4 flex items-center justify-between shadow-sm sticky top-0 z-9">
     <div class="flex items-center">
       <menu-unfold-outlined
         v-if="collapsed"
-        class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
+        class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary dark:text-white"
         @click="() => (collapsed = !collapsed)"
       />
       <menu-fold-outlined
         v-else
-        class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary"
+        class="text-lg cursor-pointer transition-colors duration-300 mr-4 hover:text-primary dark:text-white"
         @click="() => (collapsed = !collapsed)"
       />
       <div class="ml-2">
-        <a-breadcrumb>
-          <a-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="index">
+        <a-breadcrumb class="dark:text-white">
+          <a-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="index" class="dark:text-white">
             {{ item.title }}
           </a-breadcrumb-item>
         </a-breadcrumb>
@@ -50,23 +52,23 @@
     </div>
     <div>
       <a-dropdown>
-        <a class="flex items-center cursor-pointer hover:text-primary">
+        <a class="flex items-center cursor-pointer hover:text-primary dark:text-white">
           <a-avatar :size="32" class="mr-2" :src="userInfo?.avatarUrl">
             {{ userInfo?.username?.charAt(0) || 'U' }}
           </a-avatar>
-          <span v-if="userInfo?.username">{{ userInfo.username }}</span>
-          <span v-else>未登录</span>
+          <span v-if="userInfo?.username" class="dark:text-white">{{ userInfo.username }}</span>
+          <span v-else class="dark:text-white">未登录</span>
           <a-button size="small" class="ml-2" @click="handleRefreshUserInfo">刷新</a-button>
         </a>
             <template #overlay>
               <a-menu>
                 <a-menu-item key="settings" @click="navigateTo('/settings')">
-                  <setting-outlined />
+                  <setting-outlined class="mr-2" />
                   <span>设置</span>
                 </a-menu-item>
                 <a-menu-divider />
                 <a-menu-item key="logout" @click="handleLogout">
-                  <logout-outlined />
+                  <logout-outlined class="mr-2" />
                   <span>退出登录</span>
                 </a-menu-item>
               </a-menu>
@@ -77,8 +79,7 @@
 
       <!-- 内容区 -->
       <a-layout-content 
-        class="p-6 overflow-auto transition-all duration-200 min-h-[calc(100vh-144px)]"
-        :class="collapsed ? 'ml-[80px]' : 'ml-[200px]'"
+        class="p-6 overflow-auto transition-all duration-200 min-h-[calc(100vh-144px)] bg-white dark:bg-[#141414]"
       >
         <router-view v-slot="{ Component }">
           <transition 
@@ -106,6 +107,8 @@ import { storeToRefs } from 'pinia';
 import { useUserStore } from '@/stores/user';
 import { usePlayerStore } from '@/stores/player';
 import { useSettingsStore } from '@/stores/settings';
+import { ConfigProvider } from 'ant-design-vue';
+const { darkAlgorithm, defaultAlgorithm } = ConfigProvider;
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,

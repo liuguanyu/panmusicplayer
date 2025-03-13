@@ -51,6 +51,15 @@ async function createWindow() {
     await mainWindow.loadURL('http://localhost:5173');
     // 打开开发者工具
     mainWindow.webContents.openDevTools();
+    
+    // 安装Vue DevTools
+    try {
+      const { default: installExtension, VUEJS_DEVTOOLS } = require('electron-devtools-installer');
+      await installExtension(VUEJS_DEVTOOLS);
+      console.log('Vue DevTools 安装成功');
+    } catch (e) {
+      console.error('Vue DevTools 安装失败:', e);
+    }
   }
 
   // 当window被关闭时，触发下面的事件

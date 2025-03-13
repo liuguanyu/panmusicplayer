@@ -1,7 +1,7 @@
 <template>
-  <div class="p-4">
-    <a-row :gutter="[16, 16]">
-      <a-col :span="24">
+  <div class="p-4 dark:bg-dark">
+    <a-row :gutter="[16, 16]" class="flex justify-center">
+      <a-col :span="24" :md="18" :lg="16" :xl="14">
         <a-card class="mb-6">
           <template #cover>
             <div class="h-40 bg-gradient-to-br from-blue-600 to-blue-400 flex flex-col items-center justify-center text-white text-center p-6">
@@ -31,7 +31,7 @@
     <a-row :gutter="[16, 16]" class="mb-8">
       <a-col :span="24">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg m-0">最近播放</h2>
+          <h2 class="text-lg m-0 dark:text-white">最近播放</h2>
           <a-button type="link" @click="navigateTo('/playlists')">查看全部</a-button>
         </div>
       </a-col>
@@ -59,7 +59,7 @@
     <a-row :gutter="[16, 16]" class="mb-8">
       <a-col :span="24">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg m-0">我的播放列表</h2>
+          <h2 class="text-lg m-0 dark:text-white">我的播放列表</h2>
           <a-button type="link" @click="navigateTo('/playlists')">查看全部</a-button>
         </div>
       </a-col>
