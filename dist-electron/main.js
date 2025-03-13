@@ -42777,11 +42777,20 @@ async function createWindow() {
       nodeIntegrationInWorker: true,
       nodeIntegrationInSubFrames: true,
       sandbox: false,
-      experimentalFeatures: true,
+      experimentalFeatures: false,
+      // 禁用实验性功能
       preload: join(__dirname, "preload.cjs")
     },
     // 设置应用图标
     icon: join(__dirname, "../public/icon.png")
+  });
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: http: https:; connect-src 'self' http: https:;"]
+      }
+    });
   });
   if (app.isPackaged) {
     await mainWindow.loadFile(join(__dirname, "../dist/index.html"));
@@ -42829,6 +42838,83 @@ ipcMain.handle("get-playlists", () => {
 ipcMain.handle("save-playlists", (event, playlists) => {
   store.set("playlists", playlists);
   return true;
+});
+ipcMain.handle("create-playlist", (event, name, description2) => {
+  const playlists = store.get("playlists", []);
+  const newPlaylist = {
+    id: `playlist_${Date.now()}`,
+    name,
+    description: description2,
+    tracks: [],
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  playlists.push(newPlaylist);
+  store.set("playlists", playlists);
+  return newPlaylist;
+});
+ipcMain.handle("update-playlist", (event, id2, data) => {
+  const playlists = store.get("playlists", []);
+  const index = playlists.findIndex((p) => p.id === id2);
+  if (index === -1) {
+    return false;
+  }
+  playlists[index] = {
+    ...playlists[index],
+    ...data,
+    updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  store.set("playlists", playlists);
+  return playlists[index];
+});
+ipcMain.handle("delete-playlist", (event, id2) => {
+  const playlists = store.get("playlists", []);
+  const filteredPlaylists = playlists.filter((p) => p.id !== id2);
+  if (filteredPlaylists.length === playlists.length) {
+    return false;
+  }
+  store.set("playlists", filteredPlaylists);
+  return true;
+});
+ipcMain.handle("add-tracks-to-playlist", (event, playlistId, tracks) => {
+  const playlists = store.get("playlists", []);
+  const index = playlists.findIndex((p) => p.id === playlistId);
+  if (index === -1) {
+    return false;
+  }
+  const existingTrackIds = new Set(playlists[index].tracks.map((t2) => t2.id));
+  const newTracks = tracks.filter((t2) => !existingTrackIds.has(t2.id));
+  playlists[index].tracks = [...playlists[index].tracks, ...newTracks];
+  playlists[index].updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  store.set("playlists", playlists);
+  return playlists[index];
+});
+ipcMain.handle("remove-tracks-from-playlist", (event, playlistId, trackIds) => {
+  const playlists = store.get("playlists", []);
+  const index = playlists.findIndex((p) => p.id === playlistId);
+  if (index === -1) {
+    return false;
+  }
+  const trackIdSet = new Set(trackIds);
+  playlists[index].tracks = playlists[index].tracks.filter((t2) => !trackIdSet.has(t2.id));
+  playlists[index].updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  store.set("playlists", playlists);
+  return playlists[index];
+});
+ipcMain.handle("reorder-playlist-tracks", (event, playlistId, trackIds) => {
+  const playlists = store.get("playlists", []);
+  const index = playlists.findIndex((p) => p.id === playlistId);
+  if (index === -1) {
+    return false;
+  }
+  const trackMap = {};
+  playlists[index].tracks.forEach((track) => {
+    trackMap[track.id] = track;
+  });
+  playlists[index].tracks = trackIds.filter((id2) => trackMap[id2]).map((id2) => trackMap[id2]);
+  playlists[index].updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  store.set("playlists", playlists);
+  return playlists[index];
 });
 ipcMain.handle("get-recent-tracks", () => {
   return store.get("recentTracks", []);

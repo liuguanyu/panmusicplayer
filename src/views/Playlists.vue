@@ -53,7 +53,7 @@
 
     <!-- 创建/编辑播放列表对话框 -->
     <a-modal
-      v-model:visible="modalVisible"
+      v-model:open="modalVisible"
       :title="isEditing ? '编辑播放列表' : '创建播放列表'"
       @ok="handleModalOk"
       :confirmLoading="modalLoading"

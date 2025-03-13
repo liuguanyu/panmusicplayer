@@ -70,8 +70,11 @@ import { usePlayerStore } from '@/stores/player';
 const playerStore = usePlayerStore();
 
 // 状态
-const currentPlaylist = computed(() => playerStore.currentPlaylist);
-const currentTrackIndex = computed(() => playerStore.currentTrackIndex);
+const currentPlaylist = computed(() => playerStore.playlist);
+const currentTrackIndex = computed(() => {
+  if (!playerStore.currentTrack || !playerStore.playlist.length) return -1;
+  return playerStore.playlist.findIndex(track => track.id === playerStore.currentTrack.id);
+});
 const isPlaying = computed(() => playerStore.isPlaying);
 const playMode = computed({
   get: () => playerStore.playMode,
@@ -80,11 +83,15 @@ const playMode = computed({
 
 // 播放控制
 const playTrack = (index) => {
-  playerStore.playTrack(index);
+  if (index >= 0 && index < playerStore.playlist.length) {
+    playerStore.play(playerStore.playlist[index]);
+  }
 };
 
 const removeFromPlaylist = (index) => {
-  playerStore.removeFromPlaylist(index);
+  if (index >= 0 && index < playerStore.playlist.length) {
+    playerStore.removeFromPlaylist(playerStore.playlist[index].id);
+  }
 };
 
 const changePlayMode = (value) => {

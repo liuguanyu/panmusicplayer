@@ -2,7 +2,7 @@
   <div class="lyric-modals">
     <!-- 歌词同步偏移调整对话框 -->
     <a-modal
-      v-model:visible="syncOffsetModalVisible"
+      v-model:open="syncOffsetModalVisible"
       title="调整歌词同步"
       @ok="saveSyncOffset"
       okText="保存"
@@ -24,7 +24,7 @@
     
     <!-- 歌词编辑对话框 -->
     <a-modal
-      v-model:visible="lyricEditModalVisible"
+      v-model:open="lyricEditModalVisible"
       title="编辑歌词"
       width="80%"
       @ok="saveLyricEdits"

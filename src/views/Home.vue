@@ -87,6 +87,21 @@
       </a-col>
     </a-row>
   </div>
+  
+  <!-- 文件浏览器模态框 -->
+  <a-modal
+    v-model:visible="showFileExplorer"
+    title="浏览云盘文件"
+    width="80%"
+    :footer="null"
+    :destroyOnClose="true"
+  >
+    <FileExplorer 
+      :playlistId="selectedPlaylistId" 
+      @files-added="handleFilesAdded"
+      showAddToPlaylistButton
+    />
+  </a-modal>
 </template>
 
 <script setup>
@@ -101,6 +116,7 @@ import {
 } from '@ant-design/icons-vue';
 import { usePlayerStore } from '@/stores/player';
 import { usePlaylistStore } from '@/stores/playlist';
+import FileExplorer from '@/components/FileExplorer.vue';
 
 const router = useRouter();
 const playerStore = usePlayerStore();
@@ -127,17 +143,43 @@ const playTrack = async (track) => {
 };
 
 // 浏览云盘文件
+const showFileExplorer = ref(false);
+const selectedPlaylistId = ref('');
+
 const handleBrowseFiles = async () => {
   try {
-    const files = await window.electronAPI.browseCloudFiles();
-    if (files && files.length > 0) {
-      // 添加到播放列表并播放
-      await playerStore.setPlaylist(files, true);
-      message.success('已添加到播放列表');
+    // 先验证用户是否已登录
+    const isLoggedIn = await window.electronAPI.baiduPan.verifyToken();
+    if (!isLoggedIn) {
+      message.warning('您尚未登录百度云盘，请先在设置中登录');
+      router.push('/settings');
+      return;
     }
+    
+    // 获取默认播放列表ID
+    if (playlistStore.playlists.length > 0) {
+      selectedPlaylistId.value = playlistStore.playlists[0].id;
+    }
+    
+    // 显示文件浏览器模态框
+    showFileExplorer.value = true;
   } catch (error) {
     console.error('浏览文件失败:', error);
-    message.error('浏览文件失败，请重试');
+    if (error.message && error.message.includes('配置')) {
+      message.error('百度云盘配置错误，请在设置中完成配置');
+      router.push('/settings');
+    } else {
+      message.error('浏览文件失败，请重试');
+    }
+  }
+};
+
+// 处理文件添加到播放列表
+const handleFilesAdded = (tracks) => {
+  if (tracks && tracks.length > 0) {
+    // 可以选择是否立即播放
+    playerStore.loadPlaylist(tracks, true);
+    showFileExplorer.value = false;
   }
 };
 

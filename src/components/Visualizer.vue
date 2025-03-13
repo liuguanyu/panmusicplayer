@@ -48,7 +48,7 @@
     
     <!-- 设置抽屉 -->
     <a-drawer
-      v-model:visible="settingsVisible"
+      v-model:open="settingsVisible"
       title="可视化设置"
       placement="right"
       :width="300"
@@ -284,7 +284,7 @@
     
     <!-- 保存预设对话框 -->
     <a-modal
-      v-model:visible="presetModalVisible"
+      v-model:open="presetModalVisible"
       title="保存为预设"
       @ok="confirmSavePreset"
       @cancel="presetModalVisible = false"

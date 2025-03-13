@@ -35,11 +35,21 @@ async function createWindow() {
       nodeIntegrationInWorker: true,
       nodeIntegrationInSubFrames: true,
       sandbox: false,
-      experimentalFeatures: true,
+      experimentalFeatures: false, // 禁用实验性功能
       preload: join(__dirname, 'preload.cjs')
     },
     // 设置应用图标
     icon: join(__dirname, '../public/icon.png')
+  });
+  
+  // 设置内容安全策略
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: http: https:; connect-src 'self' http: https:;"]
+      }
+    });
   });
 
   // 加载应用
@@ -113,6 +123,118 @@ ipcMain.handle('get-playlists', () => {
 ipcMain.handle('save-playlists', (event, playlists) => {
   store.set('playlists', playlists);
   return true;
+});
+
+// 创建播放列表
+ipcMain.handle('create-playlist', (event, name, description) => {
+  const playlists = store.get('playlists', []);
+  const newPlaylist = {
+    id: `playlist_${Date.now()}`,
+    name,
+    description,
+    tracks: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  
+  playlists.push(newPlaylist);
+  store.set('playlists', playlists);
+  return newPlaylist; // 返回完整的播放列表对象，而不仅仅是ID
+});
+
+// 更新播放列表
+ipcMain.handle('update-playlist', (event, id, data) => {
+  const playlists = store.get('playlists', []);
+  const index = playlists.findIndex(p => p.id === id);
+  
+  if (index === -1) {
+    return false;
+  }
+  
+  playlists[index] = {
+    ...playlists[index],
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+  
+  store.set('playlists', playlists);
+  return playlists[index]; // 返回更新后的播放列表对象
+});
+
+// 删除播放列表
+ipcMain.handle('delete-playlist', (event, id) => {
+  const playlists = store.get('playlists', []);
+  const filteredPlaylists = playlists.filter(p => p.id !== id);
+  
+  if (filteredPlaylists.length === playlists.length) {
+    return false;
+  }
+  
+  store.set('playlists', filteredPlaylists);
+  return true;
+});
+
+// 添加音轨到播放列表
+ipcMain.handle('add-tracks-to-playlist', (event, playlistId, tracks) => {
+  const playlists = store.get('playlists', []);
+  const index = playlists.findIndex(p => p.id === playlistId);
+  
+  if (index === -1) {
+    return false;
+  }
+  
+  // 确保不添加重复的音轨
+  const existingTrackIds = new Set(playlists[index].tracks.map(t => t.id));
+  const newTracks = tracks.filter(t => !existingTrackIds.has(t.id));
+  
+  playlists[index].tracks = [...playlists[index].tracks, ...newTracks];
+  playlists[index].updatedAt = new Date().toISOString();
+  
+  store.set('playlists', playlists);
+  return playlists[index]; // 返回更新后的播放列表对象
+});
+
+// 从播放列表中移除音轨
+ipcMain.handle('remove-tracks-from-playlist', (event, playlistId, trackIds) => {
+  const playlists = store.get('playlists', []);
+  const index = playlists.findIndex(p => p.id === playlistId);
+  
+  if (index === -1) {
+    return false;
+  }
+  
+  const trackIdSet = new Set(trackIds);
+  playlists[index].tracks = playlists[index].tracks.filter(t => !trackIdSet.has(t.id));
+  playlists[index].updatedAt = new Date().toISOString();
+  
+  store.set('playlists', playlists);
+  return playlists[index]; // 返回更新后的播放列表对象
+});
+
+// 重新排序播放列表中的音轨
+ipcMain.handle('reorder-playlist-tracks', (event, playlistId, trackIds) => {
+  const playlists = store.get('playlists', []);
+  const index = playlists.findIndex(p => p.id === playlistId);
+  
+  if (index === -1) {
+    return false;
+  }
+  
+  // 创建一个映射，用于快速查找音轨
+  const trackMap = {};
+  playlists[index].tracks.forEach(track => {
+    trackMap[track.id] = track;
+  });
+  
+  // 按照提供的顺序重新排列音轨
+  playlists[index].tracks = trackIds
+    .filter(id => trackMap[id]) // 确保只包含存在的音轨
+    .map(id => trackMap[id]);
+  
+  playlists[index].updatedAt = new Date().toISOString();
+  
+  store.set('playlists', playlists);
+  return playlists[index]; // 返回更新后的播放列表对象
 });
 
 // 处理最近播放记录

@@ -8,6 +8,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 播放列表管理
   getPlaylists: () => ipcRenderer.invoke('get-playlists'),
   savePlaylists: (playlists) => ipcRenderer.invoke('save-playlists', playlists),
+  createPlaylist: (name, description) => ipcRenderer.invoke('create-playlist', name, description),
+  updatePlaylist: (id, data) => ipcRenderer.invoke('update-playlist', id, data),
+  deletePlaylist: (id) => ipcRenderer.invoke('delete-playlist', id),
+  addTracksToPlaylist: (playlistId, tracks) => ipcRenderer.invoke('add-tracks-to-playlist', playlistId, tracks),
+  removeTracksFromPlaylist: (playlistId, trackIds) => ipcRenderer.invoke('remove-tracks-from-playlist', playlistId, trackIds),
+  reorderPlaylistTracks: (playlistId, trackIds) => ipcRenderer.invoke('reorder-playlist-tracks', playlistId, trackIds),
   
   // 最近播放记录
   getRecentTracks: () => ipcRenderer.invoke('get-recent-tracks'),

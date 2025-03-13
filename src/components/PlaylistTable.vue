@@ -125,7 +125,7 @@
     
     <!-- 文件信息弹窗 -->
     <a-modal
-      v-model:visible="fileInfoVisible"
+      v-model:open="fileInfoVisible"
       title="文件信息"
       :footer="null"
       width="500px"

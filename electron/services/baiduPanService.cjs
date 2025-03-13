@@ -97,7 +97,8 @@ const getFileList = async (path = '/', options = {}) => {
       throw new Error(`获取文件列表失败: ${response.data.errmsg}`);
     }
 
-    return response.data.list || [];
+    // 返回完整的响应数据，包含list字段
+    return response.data;
   } catch (error) {
     console.error('获取文件列表失败:', error);
     throw error;
@@ -107,13 +108,21 @@ const getFileList = async (path = '/', options = {}) => {
 // 获取音频文件列表
 const getAudioFileList = async (path = '/', options = {}) => {
   try {
-    const fileList = await getFileList(path, options);
+    const response = await getFileList(path, options);
+    
+    // 确保有list字段
+    if (!response.list) {
+      return { ...response, list: [] };
+    }
 
     // 过滤音频文件
-    return fileList.filter(file => {
+    const audioFiles = response.list.filter(file => {
       const ext = file.server_filename.split('.').pop().toLowerCase();
       return ['mp3', 'flac', 'wav', 'aac', 'm4a', 'ogg'].includes(ext);
     });
+
+    // 返回与原响应相同的格式，但只包含音频文件
+    return { ...response, list: audioFiles };
   } catch (error) {
     console.error('获取音频文件列表失败:', error);
     throw error;
@@ -199,7 +208,8 @@ const searchFiles = async (keyword, path = '/', options = {}) => {
       throw new Error(`搜索文件失败: ${response.data.errmsg}`);
     }
 
-    return response.data.list || [];
+    // 返回完整的响应数据，包含list字段
+    return response.data;
   } catch (error) {
     console.error('搜索文件失败:', error);
     throw error;
@@ -209,13 +219,21 @@ const searchFiles = async (keyword, path = '/', options = {}) => {
 // 搜索音频文件
 const searchAudioFiles = async (keyword, path = '/', options = {}) => {
   try {
-    const fileList = await searchFiles(keyword, path, options);
+    const response = await searchFiles(keyword, path, options);
+    
+    // 确保有list字段
+    if (!response.list) {
+      return { ...response, list: [] };
+    }
 
     // 过滤音频文件
-    return fileList.filter(file => {
+    const audioFiles = response.list.filter(file => {
       const ext = file.server_filename.split('.').pop().toLowerCase();
       return ['mp3', 'flac', 'wav', 'aac', 'm4a', 'ogg'].includes(ext);
     });
+
+    // 返回与原响应相同的格式，但只包含音频文件
+    return { ...response, list: audioFiles };
   } catch (error) {
     console.error('搜索音频文件失败:', error);
     throw error;
@@ -231,10 +249,15 @@ const getLyricFile = async (audioFile) => {
 
     // 在同一目录下搜索歌词文件
     const path = audioFile.path.substring(0, audioFile.path.lastIndexOf('/') + 1);
-    const fileList = await getFileList(path);
+    const response = await getFileList(path);
+
+    // 确保有list字段
+    if (!response.list) {
+      return null;
+    }
 
     // 查找匹配的歌词文件
-    const lrcFile = fileList.find(file => file.server_filename === lrcFileName);
+    const lrcFile = response.list.find(file => file.server_filename === lrcFileName);
 
     return lrcFile || null;
   } catch (error) {

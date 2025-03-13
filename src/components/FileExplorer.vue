@@ -160,7 +160,7 @@
     
     <!-- 播放列表选择/创建模态框 -->
     <a-modal
-      v-model:visible="showPlaylistModal"
+      v-model:open="showPlaylistModal"
       :title="playlistModalMode === 'select' ? '选择播放列表' : '创建新播放列表'"
       @ok="handlePlaylistModalOk"
       @cancel="handlePlaylistModalCancel"
@@ -519,13 +519,13 @@ const handlePlaylistModalOk = async () => {
     
     try {
       // 创建新播放列表
-      const newPlaylistId = await playlistStore.createPlaylist({
-        name: newPlaylistName.value.trim(),
-        description: newPlaylistDescription.value.trim()
-      });
+      const newPlaylist = await playlistStore.createPlaylist(
+        newPlaylistName.value.trim(),
+        newPlaylistDescription.value.trim()
+      );
       
       // 使用新创建的播放列表ID添加文件
-      await processAddToPlaylist(newPlaylistId, filesToAddToPlaylist.value);
+      await processAddToPlaylist(newPlaylist.id, filesToAddToPlaylist.value);
       showPlaylistModal.value = false;
     } catch (error) {
       console.error('创建播放列表失败:', error);
