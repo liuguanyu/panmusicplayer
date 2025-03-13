@@ -10,7 +10,7 @@
       :class="{'dark:bg-[#141414]': theme === 'dark'}"
     >
       <div class="h-16 p-4 flex items-center overflow-hidden">
-        <img src="@/assets/vue.svg" alt="百度云音乐" class="h-8 w-8 mr-2" />
+        <img src="@/assets/music-logo.svg" alt="百度云音乐" class="h-8 w-8 mr-2" />
         <h1 v-if="!collapsed" class="text-lg m-0 whitespace-nowrap dark:text-white">百度云音乐</h1>
       </div>
       <a-menu
