@@ -30,7 +30,7 @@
 
     <a-layout>
       <!-- 头部 -->
-      <a-layout-header class="bg-white dark:bg-[#141414] px-4 flex items-center justify-between shadow-sm sticky top-0 z-9">
+      <a-layout-header class="bg-white !bg-white dark:bg-[#141414] px-4 flex items-center justify-between shadow-sm sticky top-0 z-9">
     <div class="flex items-center">
       <menu-unfold-outlined
         v-if="collapsed"
@@ -79,7 +79,7 @@
 
       <!-- 内容区 -->
       <a-layout-content 
-        class="p-6 overflow-auto transition-all duration-200 min-h-[calc(100vh-144px)] bg-white dark:bg-[#141414]"
+        class="p-6 overflow-auto transition-all duration-200 min-h-[calc(100vh-144px)] bg-white !bg-white dark:bg-[#141414]"
       >
         <router-view v-slot="{ Component }">
           <transition 

@@ -31,23 +31,21 @@ app.mount('#app');
 
 // 主题设置
 const setTheme = (theme) => {
+  // 移除所有主题相关的类
+  document.documentElement.classList.remove('dark', 'light');
+  
   if (theme === 'dark') {
     document.documentElement.classList.add('dark');
-    document.documentElement.setAttribute('data-theme', 'dark');
   } else if (theme === 'light') {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.add('light');
   } else {
     // 跟随系统
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
   }
+  
+  // 设置数据属性用于其他组件的主题判断
+  document.documentElement.setAttribute('data-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
 };
 
 // 初始化主题
@@ -66,16 +64,23 @@ const initTheme = async () => {
       });
     } else {
       // 在浏览器环境中，使用默认主题
-      setTheme('system');
+      setTheme('light');
       
       // 监听系统主题变化
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        setTheme('system');
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        // 如果设置为跟随系统，则根据系统主题变化更新
+        // 否则保持当前设置的主题
+        const settings = { theme: 'light' }; // 在浏览器环境中默认使用亮色模式
+        if (settings.theme === 'system') {
+          setTheme('system');
+        } else {
+          setTheme('light');
+        }
       });
     }
   } catch (error) {
     console.error('初始化主题失败:', error);
-    setTheme('system');
+    setTheme('light');
   }
 };
 
