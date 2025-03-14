@@ -86,22 +86,22 @@
         </a-card>
       </a-col>
     </a-row>
+    
+    <!-- 文件浏览器模态框 -->
+    <a-modal
+      v-model:visible="showFileExplorer"
+      title="浏览云盘文件"
+      width="80%"
+      :footer="null"
+      :destroyOnClose="true"
+    >
+      <FileExplorer 
+        :playlistId="selectedPlaylistId" 
+        @files-added="handleFilesAdded"
+        showAddToPlaylistButton
+      />
+    </a-modal>
   </div>
-  
-  <!-- 文件浏览器模态框 -->
-  <a-modal
-    v-model:visible="showFileExplorer"
-    title="浏览云盘文件"
-    width="80%"
-    :footer="null"
-    :destroyOnClose="true"
-  >
-    <FileExplorer 
-      :playlistId="selectedPlaylistId" 
-      @files-added="handleFilesAdded"
-      showAddToPlaylistButton
-    />
-  </a-modal>
 </template>
 
 <script setup>
