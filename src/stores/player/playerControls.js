@@ -13,7 +13,7 @@ export function usePlayerControls(state, { initAudio, fetchLyrics }) {
       state.currentTrack.value = track;
       
       // 设置音频源
-      state.audioElement.value.src = track.url;
+      state.audioElement.value.src = track.url || track.path;
       
       // 加载并播放
       state.loading.value = true;

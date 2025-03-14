@@ -50,7 +50,7 @@
               </div>
             </div>
           </template>
-          <a-card-meta :title="track.name" :description="track.artist || '未知艺术家'" />
+          <a-card-meta :title="formatName(track.name)" :description="track.artist || '未知艺术家'" />
         </a-card>
       </a-col>
     </a-row>
@@ -82,7 +82,7 @@
               <unordered-list-outlined class="text-5xl text-gray-500 dark:text-gray-400" />
             </div>
           </template>
-          <a-card-meta :title="playlist.name" :description="`${playlist.tracks?.length || 0}首歌曲`" />
+          <a-card-meta :title="formatName(playlist.name)" :description="`${playlist.tracks?.length || 0}首歌曲`" />
         </a-card>
       </a-col>
     </a-row>
@@ -117,6 +117,7 @@ import {
 import { usePlayerStore } from '@/stores/player';
 import { usePlaylistStore } from '@/stores/playlist';
 import FileExplorer from '@/components/FileExplorer.vue';
+import { formatName } from '@/utils/format';
 
 const router = useRouter();
 const playerStore = usePlayerStore();

@@ -28,7 +28,7 @@
                 <div class="flex items-center">
                   <sound-outlined v-if="currentTrackIndex === index && isPlaying" class="mr-2 text-primary" />
                   <span :class="{ 'text-primary': currentTrackIndex === index }">
-                    {{ item.name }}
+                    {{ formatName(item.name) }}
                   </span>
                 </div>
               </template>
@@ -66,6 +66,7 @@ import {
   DeleteOutlined
 } from '@ant-design/icons-vue';
 import { usePlayerStore } from '@/stores/player';
+import { formatName } from '@/utils/format';
 
 const playerStore = usePlayerStore();
 

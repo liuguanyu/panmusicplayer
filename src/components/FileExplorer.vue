@@ -90,7 +90,7 @@
               <customer-service-outlined v-else class="mr-2 text-primary" />
               
               <!-- 文件名 -->
-              <span :class="{ 'text-primary': isAudioFile(record) }">{{ record.server_filename }}</span>
+              <span :class="{ 'text-primary': isAudioFile(record) }">{{ formatName(record.server_filename) }}</span>
             </div>
           </template>
           
@@ -227,6 +227,7 @@ import {
 import { useUserStore } from '@/stores/user';
 import { usePlaylistStore } from '@/stores/playlist';
 import { useSettingsStore } from '@/stores/settings';
+import { formatName } from '@/utils/format';
 
 // 定义props
 const props = defineProps({

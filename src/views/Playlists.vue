@@ -28,7 +28,7 @@
                 </div>
               </div>
             </template>
-            <a-card-meta :title="playlist.name">
+            <a-card-meta :title="formatName(playlist.name)">
               <template #description>
                 <p class="truncate text-gray-500">{{ playlist.description || '暂无描述' }}</p>
                 <div class="flex justify-between items-center mt-2">
@@ -81,6 +81,7 @@ import {
   DeleteOutlined 
 } from '@ant-design/icons-vue';
 import { usePlaylistStore } from '@/stores/playlist';
+import { formatName } from '@/utils/format';
 
 const router = useRouter();
 const playlistStore = usePlaylistStore();

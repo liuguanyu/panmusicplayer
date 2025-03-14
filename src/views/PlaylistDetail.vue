@@ -3,20 +3,14 @@
     <a-spin :spinning="loading">
       <!-- 播放列表头部信息 -->
       <div class="flex gap-6 mb-6">
-        <div class="w-48 h-48 flex justify-center items-center bg-gray-100 dark:bg-gray-800 rounded-lg shadow">
+        <div class="w-48 h-48 flex justify-center items-center bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow">
           <unordered-list-outlined class="text-6xl text-gray-400" />
         </div>
         
         <div class="flex-1 flex flex-col justify-between">
           <div>
             <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold">{{ 
-                typeof playlist?.name === 'string' && playlist?.name.startsWith('{') ? 
-                  JSON.parse(playlist?.name).name : 
-                  (typeof playlist?.name === 'object' ? 
-                    playlist?.name.name : 
-                    (playlist?.name || '加载中...')) 
-              }}</h1>
+              <h1 class="text-2xl font-bold">{{ formatName(playlist?.name) || '加载中...' }}</h1>
               <a-button type="text" size="small" @click="handleEdit" v-if="playlist">
                 <template #icon><edit-outlined /></template>
               </a-button>
@@ -44,7 +38,7 @@
       </div>
       
       <!-- 歌曲列表 -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow">
         <div v-if="!playlist?.tracks?.length" class="flex justify-center items-center h-60">
           <a-empty description="暂无歌曲">
             <template #description>
@@ -78,7 +72,7 @@
               <div class="flex items-center">
                 <div class="flex-1 truncate">
                   <div :class="record.id === currentTrackId ? 'text-primary font-medium' : ''">
-                    {{ record.name }}
+                    {{ formatName(record.name) }}
                   </div>
                   <div class="text-xs text-gray-400 truncate">
                     {{ record.artist || '未知艺术家' }}
@@ -158,6 +152,7 @@ import {
 import FileExplorer from '@/components/FileExplorer.vue';
 import { usePlaylistStore } from '@/stores/playlist';
 import { usePlayerStore } from '@/stores/player';
+import { formatName } from '@/utils/format';
 
 const route = useRoute();
 const router = useRouter();

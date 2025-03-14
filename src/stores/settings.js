@@ -3,7 +3,7 @@ import { ref } from 'vue';
 
 export const useSettingsStore = defineStore('settings', () => {
   // 状态
-  const theme = ref('system'); // system, light, dark
+  const theme = ref('light'); // system, light, dark
   const visualizerType = ref('bars'); // bars, wave, circle
   const visualizerColor = ref('#1890ff');
   const autoMatchLyrics = ref(true);
@@ -23,7 +23,7 @@ export const useSettingsStore = defineStore('settings', () => {
       const settings = await window.electronAPI.getSettings();
       
       // 更新状态
-      theme.value = settings.theme || 'system';
+      theme.value = settings.theme || 'light';
       visualizerType.value = settings.visualizerType || 'bars';
       visualizerColor.value = settings.visualizerColor || '#1890ff';
       autoMatchLyrics.value = settings.autoMatchLyrics !== undefined ? settings.autoMatchLyrics : true;
@@ -177,7 +177,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // 重置设置
   const resetSettings = async () => {
-    theme.value = 'system';
+    theme.value = 'light';
     visualizerType.value = 'bars';
     visualizerColor.value = '#1890ff';
     autoMatchLyrics.value = true;

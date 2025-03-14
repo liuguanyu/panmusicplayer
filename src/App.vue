@@ -19,15 +19,24 @@ const isDarkMode = computed(() => {
 
 // Ant Design Vue 主题配置
 const theme = computed(() => ({
-  algorithm: isDarkMode.value ? ConfigProvider.darkAlgorithm : ConfigProvider.defaultAlgorithm
+  algorithm: isDarkMode.value ? ConfigProvider.darkAlgorithm : ConfigProvider.defaultAlgorithm,
+  token: {
+    colorPrimary: isDarkMode.value ? '#177ddc' : '#1890ff',
+    colorSuccess: isDarkMode.value ? '#49aa19' : '#52c41a',
+    colorWarning: isDarkMode.value ? '#d89614' : '#faad14',
+    colorError: isDarkMode.value ? '#d32029' : '#f5222d',
+    colorTextBase: isDarkMode.value ? '#ffffff' : '#000000',
+    colorBgBase: isDarkMode.value ? '#141414' : '#ffffff',
+    borderRadius: 4
+  }
 }));
 
 // 监听暗色模式变化，添加或移除 .dark 类
 const updateDarkModeClass = (isDark) => {
   if (isDark) {
-    document.body.classList.add('dark');
+    document.documentElement.classList.add('dark');
   } else {
-    document.body.classList.remove('dark');
+    document.documentElement.classList.remove('dark');
   }
 };
 

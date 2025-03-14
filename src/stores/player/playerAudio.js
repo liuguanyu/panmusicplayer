@@ -75,11 +75,22 @@ export function usePlayerAudio(state) {
         await state.audioContext.value.resume();
       }
       
+      // 验证音频源
+      const audioUrl = track.url || track.path;
+      if (!audioUrl) {
+        throw new Error('无效的音频源');
+      }
+      
+      // 验证链接有效性和格式支持
+      if (!(await validateAudioUrl(audioUrl)) || !isSupportedAudioFormat(audioUrl)) {
+        throw new Error('不支持的音频格式或无效的链接');
+      }
+      
       // 设置当前音轨
       state.currentTrack.value = track;
       
       // 设置音频源
-      state.audioElement.value.src = track.url;
+      state.audioElement.value.src = audioUrl;
       
       // 加载并播放
       state.loading.value = true;
@@ -94,10 +105,14 @@ export function usePlayerAudio(state) {
       } catch (error) {
         console.error('播放失败:', error);
         state.setError('播放失败');
+        // 触发错误处理
+        await handleError(error);
       }
     } catch (error) {
       console.error('播放音频失败:', error);
-      state.setError('播放音频失败');
+      state.setError(error.message || '播放音频失败');
+      // 触发错误处理
+      await handleError(error);
     }
   };
   
@@ -221,9 +236,73 @@ export function usePlayerAudio(state) {
   // 别名，保持兼容性
   const handleEnded = handleTrackEnded;
   
-  const handleError = (event) => {
-    console.error('音频错误:', event);
-    state.setError('音频播放出错');
+  // 检查音频格式是否支持
+  const isSupportedAudioFormat = (url) => {
+    const audio = document.createElement('audio');
+    const supportedFormats = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/ogg'];
+    
+    // 检查是否支持播放该类型
+    for (const format of supportedFormats) {
+      if (audio.canPlayType(format)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
+  // 验证链接有效性
+  const validateAudioUrl = async (url) => {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok && response.headers.get('content-type')?.startsWith('audio/');
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // 处理错误
+  const handleError = async (error) => {
+    console.error('音频播放错误:', error);
+    
+    // 检查是否为百度网盘文件
+    if (state.currentTrack.value?.source === 'baidupan') {
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          console.log(`尝试重新获取文件下载链接... (第${retryCount + 1}次)`);
+          // 通过 electron 的 IPC 调用重新获取下载链接
+          const newUrl = await window.electron.invoke('baidupan:getDownloadLink', {
+            fs_id: state.currentTrack.value.fs_id
+          });
+          
+          if (newUrl) {
+            // 验证新链接的有效性
+            if (await validateAudioUrl(newUrl) && isSupportedAudioFormat(newUrl)) {
+              console.log('成功获取新的下载链接，重试播放');
+              // 更新音轨的 URL
+              state.currentTrack.value.url = newUrl;
+              // 重新设置音频源并播放
+              state.audioElement.value.src = newUrl;
+              await state.audioElement.value.play();
+              return;
+            }
+          }
+          retryCount++;
+        } catch (retryError) {
+          console.error(`重新获取下载链接失败 (第${retryCount + 1}次):`, retryError);
+          retryCount++;
+        }
+        
+        // 在重试之间添加延迟
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    
+    // 如果重试失败或不是百度网盘文件，设置错误状态
+    state.setError('播放失败，请稍后重试');
+    state.loading.value = false;
   };
   
   const handleProgress = () => {

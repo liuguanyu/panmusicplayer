@@ -59,7 +59,7 @@
         <template v-if="column.dataIndex === 'title'">
           <div class="flex flex-col">
             <div class="font-medium" :class="{ 'text-[var(--primary-color)]': record.id === currentTrackId }">
-              {{ record.title || getFileNameFromPath(record.path) }}
+              {{ formatName(record.title) || getFileNameFromPath(record.path) }}
             </div>
             <div class="text-xs opacity-70 truncate">
               {{ record.path }}
@@ -139,7 +139,7 @@
             {{ selectedFileInfo.path }}
           </a-descriptions-item>
           <a-descriptions-item label="标题">
-            {{ selectedFileInfo.title || '未知' }}
+            {{ formatName(selectedFileInfo.title) || '未知' }}
           </a-descriptions-item>
           <a-descriptions-item label="艺术家">
             {{ selectedFileInfo.artist || '未知' }}
@@ -181,6 +181,7 @@ import {
   InboxOutlined
 } from '@ant-design/icons-vue';
 import { useSettingsStore } from '@/stores/settings';
+import { formatName } from '@/utils/format';
 
 // 定义props
 const props = defineProps({
